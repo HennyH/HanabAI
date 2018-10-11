@@ -11,7 +11,7 @@ import hanabAI.*;
  *   with probability 0.4 give a colour hint to the next player with a required card,
  *   with probability 0.4 give a number hint to the next player with a required card,
  *   otherwise discard a random card.
- *@author Tim French 
+ *@author Tim French
  **/
 public class BasicAgent implements Agent{
 
@@ -53,7 +53,7 @@ public class BasicAgent implements Agent{
   /**
    * Performs an action given a state.
    * Assumes that they are the player to move.
-   * The strategy will 
+   * The strategy will
    * a) play a card if a card is known to be playable,
    * b) discard a card if a card is known to be useless
    * c) give a number hint to the next player with a playable card (0.1 per hint token)
@@ -63,11 +63,11 @@ public class BasicAgent implements Agent{
    * g) discard a known card
    * @param s the current state of the game.
    * @return the action the player takes.
-   **/ 
+   **/
   public Action doAction(State s){
     if(firstAction){
       init(s);
-    } 
+    }
     //Assume players index is sgetNextPlayer()
     index = s.getNextPlayer();
     //get any hints
@@ -97,13 +97,13 @@ public class BasicAgent implements Agent{
           boolean[] hints = t.getPreviousAction().getHintedCards();
           for(int j = 0; j<hints.length; j++){
             if(hints[j]){
-              if(a.getType()==ActionType.HINT_COLOUR) 
+              if(a.getType()==ActionType.HINT_COLOUR)
                 colours[j] = a.getColour();
               else
-                values[j] = a.getValue();  
+                values[j] = a.getValue();
             }
           }
-        } 
+        }
         t = t.getPreviousState();
       }
     }
@@ -176,7 +176,7 @@ public class BasicAgent implements Agent{
     return null;
   }
 
-  //with probability 0.05 for each fuse token, play a random card 
+  //with probability 0.05 for each fuse token, play a random card
   public Action playGuess(State s) throws IllegalActionException{
     java.util.Random rand = new java.util.Random();
     for(int i = 0; i<s.getFuseTokens(); i++){
@@ -189,7 +189,7 @@ public class BasicAgent implements Agent{
     }
     return null;
   }
-  
+
   //discard a random card
   public Action discardGuess(State s) throws IllegalActionException{
     if (s.getHintTokens() != 8) {
@@ -232,7 +232,7 @@ public class BasicAgent implements Agent{
         }
 
       }
-    
+
     return null;
   }
 

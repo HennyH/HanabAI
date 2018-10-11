@@ -1,5 +1,6 @@
 package hanabAI;
 
+import agents.piers.PiersAgent;
 
 /**
  * A class for running a single game of Hanabi.
@@ -15,7 +16,7 @@ public class Hanabi{
   /**
    * Initilaises the game.
    * @throws IllegalArgumentException if there are not the right number of player
-   * */ 
+   * */
   public Hanabi(Agent[] agents) throws IllegalArgumentException{
     //check agents between 2 and 5
     players = agents;
@@ -80,7 +81,7 @@ public class Hanabi{
    * The agent implementations should be in the default package.
    * */
   public static void main(String[] args){
-    Agent[] agents = {new agents.BasicAgent(),new agents.BasicAgent(), new agents.BasicAgent()};
+    Agent[] agents = {new PiersAgent(),new agents.BasicAgent(), new agents.BasicAgent()};
     Hanabi game= new Hanabi(agents);
     StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
     int result = game.play(log);
