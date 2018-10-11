@@ -1,5 +1,6 @@
 # ignore class files
-**/*.class
+bin
+*.class
 #ignore the model solution
 src/agents/ModelAgent*
 #ignore the buildfile

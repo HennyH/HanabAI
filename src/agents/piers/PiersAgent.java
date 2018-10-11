@@ -18,7 +18,7 @@ public class PiersAgent implements Agent {
     public Action doAction(State s) {
 		Action maybePlay = new PlayProbablySafeCardRule(
             s.getNextPlayer(),
-            (float)0.5
+            (float)0.3
         ).play(s);
         if (maybePlay != null) {
             return maybePlay;
