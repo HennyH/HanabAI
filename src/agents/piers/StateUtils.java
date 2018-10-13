@@ -178,6 +178,10 @@ public class StateUtils {
         return StateUtils.getInitialGameState(s).getHand(0).length;
     }
 
+    public static ArrayList<Card> getDiscardedCards(State s) {
+        return new ArrayList<Card>(Arrays.asList(s.getDiscards().toArray(new Card[0])));
+    }
+
     public static boolean hasCardBeenDiscarded(State s, Card c) {
         for (Card discCard : s.getDiscards()) {
             if (discCard.getColour() == c.getColour() && discCard.getValue() == c.getValue()) {
@@ -198,20 +202,25 @@ public class StateUtils {
     }
 
     public static Action[] getChronologicalActions(State s) {
-        s = (State)s.clone();
-
         /* We have an ArrayDeque here because we are traversing the actions
          * in reverse-chronological order, and hence need to put actions we
          * visit later in the loop towards the front of the collection. The
          * deque implementation has an addFirst method we can use to do this.
          */
         ArrayDeque<Action> chronologicalAction = new ArrayDeque<Action>();
-        for (int i = 1; i <= s.getOrder(); i++) {
-            Action a = s.getPreviousAction();
-            if (a != null) {
-                chronologicalAction.addFirst(a);
+
+        s = (State)s.clone();
+        while (true) {
+            try {
+                Action previousAction = s.getPreviousAction();
+                if (previousAction != null) {
+                    chronologicalAction.addFirst(previousAction);
+                }
+                State prevState = s.getPreviousState();
+                s = prevState;
+            } catch (Exception ex) {
+                break;
             }
-            s = s.getPreviousState();
         }
 
         return chronologicalAction.toArray(new Action[0]);
@@ -332,7 +341,7 @@ public class StateUtils {
         return runningHints;
     }
 
-    public static Card[] getOtherPlayersCards(State s, int playerIndex) {
+    public static ArrayList<Card> getOtherPlayersCards(State s, int playerIndex) {
         ArrayList<Card> cards = new ArrayList<Card>();
         for (int otherPlayerIndex : StateUtils.getPlayersOtherThan(s, playerIndex)) {
             for (Card card : s.getHand(otherPlayerIndex)) {
@@ -342,7 +351,18 @@ public class StateUtils {
             }
         }
 
-        return cards.toArray(new Card[0]);
+        return cards;
+    }
+
+    public static ArrayList<Card> getPlayedCards(State s) {
+        ArrayList<Card> fireworkCards = new ArrayList<Card>();
+        for (Colour c : Colour.values()) {
+            Stack<Card> fireworks = s.getFirework(c);
+            while (!fireworks.empty()) {
+                fireworkCards.add(fireworks.pop());
+            }
+        }
+        return fireworkCards;
     }
 
     public static ArrayList<Card> getPlayableFireworksCards(State s) {
@@ -350,22 +370,42 @@ public class StateUtils {
         for (Colour c : Colour.values()) {
             Stack<Card> fireworks = s.getFirework(c);
             if (fireworks.empty()) {
-                continue;
-            }
-            Card topCard = fireworks.pop();
-            if (!CardUtils.doesCardHasMaximumValue(topCard)) {
-                /* This helper method handles the case where you pass it
-                 * a ?5 card, hence the Maybe<Card> return type.
-                 */
-                Maybe<Card> maybeNextCard = CardUtils.getNextHighestCardWithSameColour(
-                    topCard
-                );
-                if (maybeNextCard.hasValue()) {
-                    playableCards.add(maybeNextCard.getValue());
+                playableCards.add(new Card(c, 1));
+            } else {
+                Card topCard = fireworks.pop();
+                if (!CardUtils.doesCardHasMaximumValue(topCard)) {
+                    /* This helper method handles the case where you pass it
+                    * a ?5 card, hence the Maybe<Card> return type.
+                    */
+                    Maybe<Card> maybeNextCard = CardUtils.getNextHighestCardWithSameColour(
+                        topCard
+                    );
+                    if (maybeNextCard.hasValue()) {
+                        playableCards.add(maybeNextCard.getValue());
+                    }
                 }
             }
         }
         return playableCards;
+    }
+
+    public static Maybe<Card> getTopFireworksCardForColour(State s, Colour colour) {
+        Stack<Card> fireworks = s.getFirework(colour);
+        if (fireworks.empty()) {
+            return new Maybe<Card>(null);
+        }
+        return new Maybe<Card>(fireworks.pop());
+    }
+
+    public static Maybe<Card> getPlayableFireworkCardForColour(State s, Colour colour) {
+        ArrayList<Card> fireworkCards = StateUtils.getPlayableFireworksCards(s);
+        for (Card fireworkCard : fireworkCards) {
+            if (fireworkCard.getColour() == colour) {
+                return new Maybe<Card>(fireworkCard);
+            }
+        }
+
+        return new Maybe<Card>(null);
     }
 
 }

@@ -31,6 +31,28 @@ public class CardUtils {
         return values;
     }
 
+    public static Colour[] getPossibleCardColours() {
+        return Colour.values();
+    }
+
+    public static ArrayList<Card> expandCards(Maybe<Colour> ofColour, Maybe<Integer> ofValue) {
+        Colour[] colours = ofColour.hasValue()
+            ? new Colour[] { ofColour.getValue() }
+            : CardUtils.getPossibleCardColours();
+        int[] values = ofValue.hasValue()
+            ? new int[] { ofValue.getValue() }
+            : CardUtils.getPossibleCardValues();
+
+        ArrayList<Card> cards = new ArrayList<Card>();
+        for (Colour colour : colours) {
+            for (int value : values) {
+                cards.add(new Card(colour, value));
+            }
+        }
+
+        return cards;
+    }
+
     public static boolean doesCardHasMaximumValue(Card c) {
         return c.getValue() == 5;
     }
@@ -42,12 +64,7 @@ public class CardUtils {
     }
 
     public static boolean hintMatchesCard(Card c, CardHint hint) {
-        Maybe<Colour> hintColour = hint.maybeGetActualColour();
-        Maybe<Integer> hintValue = hint.maybeGetActualValue();
-        return hintColour.hasValue()
-               && hintValue.hasValue()
-               && hintColour.getValue() == c.getColour()
-               && hintValue.getValue() == c.getValue();
+        return hint.getPossibleCards().contains(c);
     }
 
     public static Func<Card, Boolean> getColorFilter(Colour colour) {
@@ -59,7 +76,7 @@ public class CardUtils {
         };
     }
 
-    public static Func<Card, Boolean> getColorsFilter(Colour[] colours) {
+    public static Func<Card, Boolean> getColorsFilter(ArrayList<Colour> colours) {
         return new Func<Card, Boolean>() {
             @Override
             public Boolean apply(Card card) {
@@ -173,76 +190,8 @@ public class CardUtils {
             );
     }
 
-    public static float calculateProbabilityOfHintBeingAParticularCard(
-            ArrayList<Card> cardPool,
-            Card targetCard,
-            CardHint hint
-        )
-    {
-        if (!CardUtils.doesDeckContainCard(cardPool, targetCard)) {
-            return (float)0.0;
-        }
-
-        ArrayList<Card> possibleCardsHintCouldBe = CardHint.expandPossibleCards(hint);
-        /*
-
-
-        Maybe<Colour> colourHint = hint.maybeGetActualColour();
-        Maybe<Integer> valueHint = hint.maybeGetActualValue();
-
-        /* If we know the colour and value from the hint, and the colour and
-         * value match up to the target card we can be ceartin of a match.
-         */
-        if (colourHint.hasValue()
-                && valueHint.hasValue()
-                && colourHint.getValue() == targetCard.getColour()
-                && valueHint.getValue() == targetCard.getValue()
-        ) {
-            return (float)1.0;
-        }
-
-        /* If we know nothing from the hint, the probability that it is the
-         * target card is equal to the probability of drawing it out of the
-         * pool at random.
-         */
-        if (!valueHint.hasValue() && !colourHint.hasValue()) {
-            return (float)(1.0 / cardPool.size());
-        }
-
-        /* If we know the colour from a hint and it matches the target card,
-         * the probabiltiy of the hinted card being the target is equal to
-         * the 1 / the number of same coloured cards in the pool.
-         */
-        if (colourHint.hasValue()
-                && !valueHint.hasValue()
-                && colourHint.getValue() == targetCard.getColour()
-        ) {
-            double numberOfSameColouredCardsInPool = (double)Linq.count(
-                cardPool,
-                CardUtils.getColorFilter(colourHint.getValue())
-            );
-            return (float)(1.0 / numberOfSameColouredCardsInPool);
-        }
-
-        /* Similar to the color-only hinted case, except we examine the number
-         * of possible cards that share the same value regardless of colour.
-         */
-        if (valueHint.hasValue()
-                && !colourHint.hasValue()
-                && valueHint.getValue() == targetCard.getValue()
-        ) {
-            double numberOfSameValuedCardsInPool = (double)Linq.count(
-                cardPool,
-                CardUtils.getValueFilter(valueHint.getValue())
-            );
-            return (float)(1.0 / numberOfSameValuedCardsInPool);
-        }
-
-        return (float)0.0;
-    }
-
     public static float calculateProbabilityOfHintBeingATargetCard(
-            ArrayList<Card> possibleCards,
+            ArrayList<Card> cardPool,
             ArrayList<Card> targetCards,
             CardHint hint
         )
@@ -253,7 +202,7 @@ public class CardUtils {
             new Func<Card, Boolean>() {
                 @Override
                 public Boolean apply(Card targetCard) {
-                    for (Card possibleCard : possibleCards) {
+                    for (Card possibleCard : cardPool) {
                         if (possibleCard.equals(targetCard)) {
                             /* keep */
                             return true;
@@ -265,18 +214,21 @@ public class CardUtils {
             }
         );
 
-        ArrayList<Float> probabilities = new ArrayList<Float>();
-        for (Card targetCard : targetCards) {
-            probabilities.add(
-                CardUtils.calculateProbabilityOfHintBeingAParticularCard(
-                    possibleCards,
-                    targetCard,
-                    hint
-                )
-            );
-        }
+        ArrayList<Card> possibleCardsHintCouldBe = Linq.elementsOf(
+            cardPool,
+            hint.getPossibleCards()
+        );
+        ArrayList<Card> targetCardsHintMatches = Linq.re(
+            hint.getPossibleCards(),
+            targetCards
+        );
 
-        return Linq.sum(probabilities);
+        try {
+            return (float)targetCardsHintMatches.size() / (float)possibleCardsHintCouldBe.size();
+        } catch (ArithmeticException ex) {
+            System.out.println("THis should never have occured");
+            return (float)0.0;
+        }
     }
 
     public static HintUtilityCalculation calculateUtilityOfHintInformationForPlayer(
@@ -345,8 +297,12 @@ public class CardUtils {
 
             /* If we already know the colour (and are correct in our assumption)
              * then telling us the colour again doesn't provide any new information.
+             * Likewise with the value.
              */
-            if (maybeKnownColour.hasValue() && maybeKnownColour.getValue() == card.getColour()) {
+            if (
+                    (maybeKnownColour.hasValue() && maybeKnownColour.getValue() == card.getColour()) ||
+                    (maybeKnownValue.hasValue() && maybeKnownValue.getValue() == card.getValue())
+            ) {
                 utility += 0;
                 pointedAtCardIndexes.add(cardIndex);
                 continue;
@@ -395,4 +351,17 @@ public class CardUtils {
             pointedAtCardIndexes
         );
     }
+
+    public static String getColourInitial(Colour colour) {
+        return colour.name().substring(0, 1);
+    }
+
+    public static String getColourInitial(Card c) {
+        return CardUtils.getColourInitial(c.getColour());
+    }
+
+    public static String getShortPreview(Card c) {
+        return CardUtils.getColourInitial(c) + ((Integer)c.getValue()).toString();
+    }
+
 }

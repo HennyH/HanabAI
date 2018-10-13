@@ -2,6 +2,8 @@ package hanabAI;
 
 import java.util.Stack;
 
+import agents.piers.CardUtils;
+
 /**An immutable class for representing Hanabi cards**/
 public class Card{
   private Colour colour;//the card's colour
@@ -39,18 +41,20 @@ public class Card{
    *Give a String representation of the card
    *@return the strinf representation of the card
    */
-  public String toString(){return colour.toString()+"-"+value;}
+  public String toString(){
+    return CardUtils.getShortPreview(this);
+  }
 
   /**
    * Gives a new instance of a complete deck of cards, ordered by colour and value
-   * @return an array of cards corresponding to a standard Hanabi deck 
+   * @return an array of cards corresponding to a standard Hanabi deck
    **/
   public static Card[] getDeck(){return deck.clone();}
 
   /**
    * Gives a new instance of a shuffled deck of cards deck of cards.
-   * Pairs of random cards are swapped 100 times, and placed into a stack. 
-   * @return a stack of Hanabi cards in random order 
+   * Pairs of random cards are swapped 100 times, and placed into a stack.
+   * @return a stack of Hanabi cards in random order
    **/
   public static Stack<Card> shuffledDeck(){
     Card[] deck = getDeck();
@@ -69,9 +73,9 @@ public class Card{
 
   /**
    * Cards are compared by colour and value.
-   **/ 
+   **/
   public boolean equals(Object o){
-    if(o!=null && o instanceof Card){ 
+    if(o!=null && o instanceof Card){
       Card c = (Card)o;
       return c.colour == colour && c.value==value;
     }

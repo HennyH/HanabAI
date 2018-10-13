@@ -26,36 +26,28 @@ public class PlayProbablySafeCardRule implements IRule {
         /* Figure out which cards would be safe to play. */
         ArrayList<Card> targetCards = StateUtils.getPlayableFireworksCards(s);
 
-        /* A card that exists in someone elses hands can't be a target for you
-         * to play.
-         */
-        targetCards = Linq.filter(
-            targetCards,
-            DeckUtils.getInOtherPlayersHandFilter(s, this._playerIndex)
-        );
-
         /* Determine all the cards that a card in our hand could possibly be. */
         ArrayList<Card> cardPool = DeckUtils.getHanabiDeck();
         /* If a card is in the fireworks display it isn't possible for that
          * card to be in our hand.
          */
-        cardPool = Linq.filter(
+        cardPool = Linq.removeInstanceWise(
             cardPool,
-            DeckUtils.getCardsInFireworksFilter(s)
+            StateUtils.getPlayedCards(s)
         );
         /* If we know a card has been discarded it isn't possible for a card in
          * our hand to be the same.
          */
-        cardPool = Linq.filter(
+        cardPool = Linq.removeInstanceWise(
             cardPool,
-            DeckUtils.getCardsInDiscardPileFilter(s)
+            StateUtils.getDiscardedCards(s)
         );
         /* We see everyone else's hands, if someone else has a particular card,
          * it isn't possible for us to maybe have that card in our hand.
          */
-        cardPool = Linq.filter(
+        cardPool = Linq.removeInstanceWise(
             cardPool,
-            DeckUtils.getInOtherPlayersHandFilter(s, this._playerIndex)
+            StateUtils.getOtherPlayersCards(s, this._playerIndex)
         );
 
 
@@ -80,16 +72,20 @@ public class PlayProbablySafeCardRule implements IRule {
             }
         }
 
+        System.out.println("----------START PLAY P(x) SAFE-----------");
+
+        System.out.println("POOL:");
+        System.out.println(Arrays.toString(cardPool.toArray()));
+        System.out.println("TARGETS:");
+        System.out.println(Arrays.toString(targetCards.toArray()));
+        System.out.println("HINTS:");
+        System.out.println(Arrays.toString(hints));
+        System.out.println("BEST CHOICE:");
+        System.out.println("CARD #: " + (bestCardHint == null ? "NONE" : ((Integer)bestCardHint.getCardIndex()).toString()));
+        System.out.println(bestCardSafeProbability);
+
         if (bestCardSafeProbability >= this._confidenceThreshold) {
-            System.out.println("POOL:");
-            System.out.println(Arrays.toString(cardPool.toArray()));
-            System.out.println("TARGETS:");
-            System.out.println(Arrays.toString(targetCards.toArray()));
-            System.out.println("HINTS:");
-            System.out.println(Arrays.toString(hints));
-            System.out.println("CHOSEN:");
-            System.out.println(s.getHand(this._playerIndex)[bestCardHint.getCardIndex()]);
-            System.out.println("---------------------");
+            System.out.println("Played!");
             try {
                 return new Action(
                     this._playerIndex,
@@ -100,7 +96,12 @@ public class PlayProbablySafeCardRule implements IRule {
             } catch (IllegalActionException ex) {
                 System.out.println(ex.getStackTrace());
             }
+        } else {
+            System.out.println("Not Played :(");
         }
+
+
+        System.out.println("----------END PLAY P(x) SAFE-----------");
 
         return null;
     }

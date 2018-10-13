@@ -1,6 +1,7 @@
 package hanabAI;
 
 import agents.piers.PiersAgent;
+import agents.piers.StateUtils;
 
 /**
  * A class for running a single game of Hanabi.
@@ -53,10 +54,16 @@ public class Hanabi{
     log.append(state);
     try{
       while(!state.gameOver()){
+        log.append(state.toString());
+        Action[] pastActions = StateUtils.getChronologicalActions(state);
         int p = state.getNextPlayer();
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
-        log.append(state.toString());
+        log.append("\t\t PAST ACTIONS:\n\t\t--------\n");
+        for (Action pastAction : pastActions) {
+          log.append("\t\t " + pastAction.toString() + "\n");
+        }
+        log.append("\t\t END OF PAST ACTIONS:\n\t\t--------\n");
       }
       return state.getScore();
     }
@@ -81,7 +88,7 @@ public class Hanabi{
    * The agent implementations should be in the default package.
    * */
   public static void main(String[] args){
-    Agent[] agents = {new PiersAgent(),new agents.BasicAgent(), new agents.BasicAgent()};
+    Agent[] agents = {new PiersAgent(),new PiersAgent(), new PiersAgent()};
     Hanabi game= new Hanabi(agents);
     StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
     int result = game.play(log);

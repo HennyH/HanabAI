@@ -12,7 +12,16 @@ public class DeckUtils {
         ArrayList<Card> deck = new ArrayList<Card>();
         for (Colour colour : Colour.values()) {
             for (int value = 1; value <= 5; value++) {
-                deck.add(new Card(colour, value));
+                if (value == 1) {
+                    deck.add(new Card(colour, value));
+                    deck.add(new Card(colour, value));
+                    deck.add(new Card(colour, value));
+                } else if (value == 2 || value == 3 || value == 4) {
+                    deck.add(new Card(colour, value));
+                    deck.add(new Card(colour, value));
+                } else {
+                    deck.add(new Card(colour, value));
+                }
             }
         }
 

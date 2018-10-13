@@ -33,6 +33,18 @@ public class IfRule implements IRule {
             consequence
         );
     }
+
+    public static IfRule atLeastNHLivesLeft(int n, IRule consequence) {
+        return new IfRule(
+            new Func<State, Boolean>() {
+                @Override
+                public Boolean apply(State s) {
+                    return s.getFuseTokens() >= n;
+                }
+            },
+            consequence
+        );
+    }
 }
 
 
