@@ -18,4 +18,12 @@ public class Maybe<T> {
     public boolean hasValue() {
         return this._value != null;
     }
+
+    @Override
+    public String toString() {
+        if (this.hasValue()) {
+            return this._value.toString();
+        }
+        return "None";
+    }
 }

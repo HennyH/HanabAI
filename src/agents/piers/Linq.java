@@ -24,7 +24,7 @@ public class Linq {
         return seen;
     }
 
-    public static <T> boolean some(ArrayList<T> source, Func<T, Boolean> predicate) {
+    public static <T> boolean any(ArrayList<T> source, Func<T, Boolean> predicate) {
         for (T obj : source) {
             if (predicate.apply(obj) == true) {
                 return true;
@@ -40,4 +40,5 @@ public class Linq {
         }
         return total;
     }
+
 }

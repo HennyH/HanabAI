@@ -16,16 +16,30 @@ public class PiersAgent implements Agent {
 
     @Override
     public Action doAction(State s) {
-		Action maybePlay = new PlayProbablySafeCardRule(
-            s.getNextPlayer(),
-            (float)0.3
-        ).play(s);
-        if (maybePlay != null) {
-            return maybePlay;
+        int player = StateUtils.getCurrentPlayer(s);
+		IRule policy = new RuleSequenceRule(
+            new PlayProbablySafeCardRule(player, (float)0.6),
+            IfRule.atLeastNHintsLeft(
+                6,
+                new TellAnyoneAboutUsefulCardRule(
+                    player,
+                    (float)1.0,
+                    (float)1.0,
+                    (float)1.0,
+                    (float)1.0,
+                    (float)5.0
+                )
+            )
+        );
+
+        Action a = policy.play(s);
+        if (a != null) {
+            return a;
         }
-        BasicAgent a = new BasicAgent();
-        a.init(s);
-        return a.doAction(s);
+
+        BasicAgent fallback = new BasicAgent();
+        fallback.init(s);
+        return fallback.doAction(s);
 	}
 
 }

@@ -21,6 +21,18 @@ public class IfRule implements IRule {
 
         return null;
     }
+
+    public static IfRule atLeastNHintsLeft(int n, IRule consequence) {
+        return new IfRule(
+            new Func<State, Boolean>() {
+                @Override
+                public Boolean apply(State s) {
+                    return s.getHintTokens() >= n;
+                }
+            },
+            consequence
+        );
+    }
 }
 
 

@@ -24,17 +24,7 @@ public class PlayProbablySafeCardRule implements IRule {
     @Override
     public Action play(State s) {
         /* Figure out which cards would be safe to play. */
-        ArrayList<Card> targetCards = new ArrayList<Card>();
-        for (Colour c : Colour.values()) {
-            Stack<Card> fireworks = s.getFirework(c);
-            if (fireworks.empty()) {
-                continue;
-            }
-            Card topCard = fireworks.pop();
-            if (!CardUtils.doesCardHasMaximumValue(topCard)) {
-                targetCards.add(CardUtils.getNextCardInFireworksSequence(topCard));
-            }
-        }
+        ArrayList<Card> targetCards = StateUtils.getPlayableFireworksCards(s);
 
         /* A card that exists in someone elses hands can't be a target for you
          * to play.
