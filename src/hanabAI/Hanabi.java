@@ -88,7 +88,7 @@ public class Hanabi{
    * The agent implementations should be in the default package.
    * */
   public static void main(String[] args){
-    Agent[] agents = {new PiersAgent(),new PiersAgent(), new PiersAgent()};
+    Agent[] agents = {new PiersAgent(),new PiersAgent()};
     Hanabi game= new Hanabi(agents);
     StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
     int result = game.play(log);

@@ -38,7 +38,7 @@ public class CardHint
         return new CardHint(
             hint.getPlayerIndex(),
             hint.getCardIndex(),
-            Linq.setDifference(
+            Linq.notElementsOf(
                 hint.getPossibleCards(),
                 CardUtils.expandCards(
                     new Maybe<Colour>(colour),
@@ -57,7 +57,7 @@ public class CardHint
         return new CardHint(
             hint.getPlayerIndex(),
             hint.getCardIndex(),
-            Linq.setDifference(
+            Linq.notElementsOf(
                 hint.getPossibleCards(),
                 CardUtils.expandCards(
                     new Maybe<Colour>(null),
@@ -76,9 +76,12 @@ public class CardHint
         return new CardHint(
             hint.getPlayerIndex(),
             hint.getCardIndex(),
-            CardUtils.expandCards(
-                new Maybe<Colour>(colour),
-                new Maybe<Integer>(null)
+            Linq.elementsOf(
+                hint.getPossibleCards(),
+                CardUtils.expandCards(
+                    new Maybe<Colour>(colour),
+                    new Maybe<Integer>(null)
+                )
             )
         );
     }
@@ -92,9 +95,12 @@ public class CardHint
         return new CardHint(
             hint.getPlayerIndex(),
             hint.getCardIndex(),
-            CardUtils.expandCards(
-                new Maybe<Colour>(null),
-                new Maybe<Integer>(value)
+            Linq.elementsOf(
+                hint.getPossibleCards(),
+                CardUtils.expandCards(
+                    new Maybe<Colour>(null),
+                    new Maybe<Integer>(value)
+                )
             )
         );
     }
@@ -119,7 +125,7 @@ public class CardHint
                 Maybe<Card> singleCard = Linq.single(possibleCardsOfColour);
                 if (singleCard.hasValue()) {
                     cardPreviews.add(CardUtils.getShortPreview(singleCard.getValue()));
-                } else if (possibleCardsOfColour.size() == CardUtils.getPossibleCardValues().length) {
+                } else if (possibleCardsOfColour.size() == CardUtils.getPossibleCardValues().size()) {
                     cardPreviews.add(CardUtils.getColourInitial(colour) + "*");
                 } else {
                     String numbers = "(";
@@ -153,20 +159,6 @@ public class CardHint
     public int getPlayerIndex() { return this._playerIndex; }
     public int getCardIndex() { return this._cardIndex; }
 
-    public Maybe<Colour> maybeGetActualColour() {
-        if (this._possibleCards.size() == 1) {
-            return new Maybe<Colour>(Linq.first(this._possibleCards).getValue().getColour());
-        }
-        return new Maybe<Colour>(null);
-    }
-
-    public Maybe<Integer> maybeGetActualValue() {
-        if (this._possibleCards.size() == 1) {
-            return new Maybe<Integer>(Linq.first(this._possibleCards).getValue().getValue());
-        }
-        return new Maybe<Integer>(null);
-    }
-
     public ArrayList<Colour> getPossibleColours() {
         HashSet<Colour> colours = new HashSet<Colour>();
         for (Card card : this._possibleCards) {
@@ -175,15 +167,33 @@ public class CardHint
         return new ArrayList<Colour>(Arrays.asList(colours.toArray(new Colour[0])));
     }
 
-    public Integer[] getPossibleValues() {
-        HashSet<Integer> colours = new HashSet<Integer>();
+    public ArrayList<Integer> getPossibleValues() {
+        HashSet<Integer> values = new HashSet<Integer>();
         for (Card card : this._possibleCards) {
-            colours.add(card.getValue());
+            values.add(card.getValue());
         }
-        return colours.toArray(new Integer[0]);
+        return new ArrayList<Integer>(Arrays.asList(values.toArray(new Integer[0])));
+    }
+
+    public Maybe<Colour> maybeGetActualColour() {
+        ArrayList<Colour> possibleColours = this.getPossibleColours();
+        if (possibleColours.size() == 1) {
+            return Linq.single(possibleColours);
+        }
+        return new Maybe<Colour>(null);
+    }
+
+    public Maybe<Integer> maybeGetActualValue() {
+        ArrayList<Integer> possibleValues = this.getPossibleValues();
+        if (possibleValues.size() == 1) {
+            return Linq.single(possibleValues);
+        }
+        return new Maybe<Integer>(null);
     }
 
     public ArrayList<Card> getPossibleCards() {
-        return (ArrayList<Card>)this._possibleCards.clone();
+        @SuppressWarnings("unchecked")
+        ArrayList<Card> cards = (ArrayList<Card>)this._possibleCards.clone();
+        return cards;
     }
 }

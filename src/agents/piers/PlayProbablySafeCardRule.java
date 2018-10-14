@@ -73,7 +73,7 @@ public class PlayProbablySafeCardRule implements IRule {
         }
 
         System.out.println("----------START PLAY P(x) SAFE-----------");
-
+        System.out.println("PLAYER: " + ((Integer)this._playerIndex).toString());
         System.out.println("POOL:");
         System.out.println(Arrays.toString(cardPool.toArray()));
         System.out.println("TARGETS:");

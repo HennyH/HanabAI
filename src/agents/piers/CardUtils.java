@@ -22,11 +22,10 @@ public class CardUtils {
         return maxValue;
     }
 
-    public static int[] getPossibleCardValues() {
-        int[] values = new int[5];
-        int j = 0;
+    public static ArrayList<Integer> getPossibleCardValues() {
+        ArrayList<Integer>  values = new ArrayList<Integer>();
         for (int i = 1; i <= 5; i++) {
-            values[j++] = i;
+            values.add(i);
         }
         return values;
     }
@@ -39,9 +38,9 @@ public class CardUtils {
         Colour[] colours = ofColour.hasValue()
             ? new Colour[] { ofColour.getValue() }
             : CardUtils.getPossibleCardColours();
-        int[] values = ofValue.hasValue()
-            ? new int[] { ofValue.getValue() }
-            : CardUtils.getPossibleCardValues();
+        Integer[] values = ofValue.hasValue()
+            ? new Integer[] { ofValue.getValue() }
+            : CardUtils.getPossibleCardValues().toArray(new Integer[0]);
 
         ArrayList<Card> cards = new ArrayList<Card>();
         for (Colour colour : colours) {
@@ -116,8 +115,11 @@ public class CardUtils {
     public static boolean isCardSafeToPlayFromOwnView(State s, CardHint ownView) {
         ArrayList<Card> safeCards = StateUtils.getPlayableFireworksCards(s);
 
+        System.out.println("\t\t\t Testing if " + ownView.toString() + " is playable...");
+
         /* This is the obvious case where we know both the colour and value. */
         if (CardUtils.doesDeckContainCard(safeCards, ownView)) {
+            System.out.println("\t\t\t  > It is!");
             return true;
         }
 
@@ -140,6 +142,7 @@ public class CardUtils {
             /* Now make sure that in all such piles our value would be suitable. */
             for (Card safeCard : safeCards) {
                 if (actualValue.getValue() != safeCard.getValue()) {
+                    System.out.println("\t\t\t  > It is NOT");
                     return false;
                 }
             }
@@ -147,9 +150,11 @@ public class CardUtils {
             /* We have checked that in all the piles whose colour we might be,
              * that our value would be okay.
              */
+            System.out.println("\t\t\t  > It is!");
             return true;
         }
 
+        System.out.println("\t\t\t  > It is NOT");
         return false;
     }
 
@@ -214,17 +219,24 @@ public class CardUtils {
             }
         );
 
-        ArrayList<Card> possibleCardsHintCouldBe = Linq.elementsOf(
+        ArrayList<Card> targetCardsInPool = Linq.elementsOf(
+            cardPool,
+            targetCards
+        );
+        ArrayList<Card> targetCardsInPoolTheHintedCardMayBe = Linq.elementsOf(
+            targetCardsInPool,
+            hint.getPossibleCards()
+        );
+        ArrayList<Card> cardsInPoolTheHintedCardMayBe = Linq.elementsOf(
             cardPool,
             hint.getPossibleCards()
         );
-        ArrayList<Card> targetCardsHintMatches = Linq.re(
-            hint.getPossibleCards(),
-            targetCards
-        );
 
         try {
-            return (float)targetCardsHintMatches.size() / (float)possibleCardsHintCouldBe.size();
+            return
+                (float)targetCardsInPoolTheHintedCardMayBe.size()
+                /
+                (float)cardsInPoolTheHintedCardMayBe.size();
         } catch (ArithmeticException ex) {
             System.out.println("THis should never have occured");
             return (float)0.0;
@@ -240,7 +252,7 @@ public class CardUtils {
             float weightingForValueOverColour,
             float weightingForColourOverValue,
             float weightingForHigherValues,
-            float weightingForRevealingPlayableCard
+            float weightingForRevealingPlayableCards
     ) {
         if (StateUtils.getCurrentPlayer(s) == playerIndex) {
             throw new IllegalArgumentException(
@@ -260,19 +272,14 @@ public class CardUtils {
         }
 
         Card[] hand = s.getHand(playerIndex);
-        CardHint[] playersHints = StateUtils.getHintsForPlayer(s, playerIndex);
+        CardHint[] playersViewOfCards = StateUtils.getHintsForPlayer(s, playerIndex);
         ArrayList<Integer> pointedAtCardIndexes = new ArrayList<Integer>();
-        float utility = (float)0.0;
 
         System.out.println("\t\tEXAMINING HINT colour = " + colourHint.toString() + "\t value = " + valueHint.toString());
 
-        for (CardHint knownHint : playersHints) {
+        for (CardHint knownHint : playersViewOfCards) {
             int cardIndex = knownHint.getCardIndex();
             Card card = hand[cardIndex];
-            Maybe<Colour> maybeKnownColour = knownHint.maybeGetActualColour();
-            Maybe<Integer> maybeKnownValue = knownHint.maybeGetActualValue();
-
-            //System.out.println("\t\t\t FOR CARD " + card.toString());
 
             /* These cases capture where you wouldn't end up pointing at a
              * a card because it either doesn't exist (null in hand) or isn't
@@ -291,55 +298,93 @@ public class CardUtils {
                     (valueHint.hasValue() && valueHint.getValue() != card.getValue())
                 )
             ) {
-                utility += 0;
                 continue;
             }
 
-            /* If we already know the colour (and are correct in our assumption)
-             * then telling us the colour again doesn't provide any new information.
-             * Likewise with the value.
-             */
-            if (
-                    (maybeKnownColour.hasValue() && maybeKnownColour.getValue() == card.getColour()) ||
-                    (maybeKnownValue.hasValue() && maybeKnownValue.getValue() == card.getValue())
-            ) {
-                utility += 0;
-                pointedAtCardIndexes.add(cardIndex);
-                continue;
-            }
-
-            /* Now that we have established the hint at least concerns the card
-             * we calculate the degree to which it does.
-             *
-             * All 'factors' here should be normalized and range between
-             * 0.0 - 1.0
-             */
-            float isValueHint = valueHint.hasValue() ? (float)1.0 : (float)0.0;
-            float isColourHint = colourHint.hasValue() ? (float)1.0 : (float)0.0;
-            /* We normalize this by dividing by the highest possible value for
-             * a samle coloured card. 1/5 = 0.2 but 5/5 = 1.0 the max.
-             */
-            float highnessOfValue =
-                card.getValue() / (float)CardUtils.getHighestValueOfCardType(card);
-            float playablenessOfCard = CardUtils.isCardSafeToPlayFromOwnView(s, knownHint)
-                ? (float)1.0
-                : (float)0.0;
-
-            utility +=
-                (weightingForValueOverColour * isValueHint) +
-                (weightingForColourOverValue * isColourHint) +
-                (weightingForHigherValues * highnessOfValue) +
-                (weightingForRevealingPlayableCard * playablenessOfCard);
+            /* Record that we would point at a card. */
             pointedAtCardIndexes.add(cardIndex);
         }
 
-        /* This will be between 0.0 - 1.0. */
-        float percentageOfHandPointedTo =
-            (float)pointedAtCardIndexes.size() / (float)StateUtils.getNumberOfCardsInPlayersHand(s, playerIndex);
-        utility +=
-            (weightingForPointingAtMoreCards * percentageOfHandPointedTo);
+        /* A hint that reveals nothing has no utility, and would be illegal! */
+        if (pointedAtCardIndexes.size() == 0) {
+            new HintUtilityCalculation(
+                playerIndex,
+                (float)(-Integer.MAX_VALUE),
+                valueHint.hasValue()
+                    ? ActionType.HINT_VALUE
+                    : ActionType.HINT_COLOUR,
+                colourHint,
+                valueHint,
+                pointedAtCardIndexes
+            );
+        }
 
+        /* All the parameters to the utility function should be between
+         * 0.0 - 1.0 so we can easily normalize the result of the utility
+         * function.
+         */
+        float playersHandSize = (float)StateUtils.getNumberOfCardsInPlayersHand(s, playerIndex);
+        float paramPercentageOfHandPointedTo =
+            (float)pointedAtCardIndexes.size() / playersHandSize;
+        float paramPercentageOfCardsInHandThatWerePointedAndArePlayable =
+            (float)(
+                Linq.filter(
+                    pointedAtCardIndexes,
+                    new Func<Integer, Boolean>() {
+                        @Override
+                        public Boolean apply(Integer cardIndex) {
+                            /* We test to see, if the current player were
+                             * given the hint if that card would be playable.
+                             */
+                            return CardUtils.isCardSafeToPlayFromOwnView(
+                                s,
+                                valueHint.hasValue()
+                                    ? CardHint.is(playersViewOfCards[cardIndex], valueHint.getValue())
+                                    : CardHint.is(playersViewOfCards[cardIndex], colourHint.getValue())
+                            );
+                        }
+                    }
+                ).size()
+            )
+            /
+            playersHandSize;
+        float paramAverageValueOfPointedAtCards =
+            (float)(
+                Linq.avg(
+                    pointedAtCardIndexes,
+                    new Func<Integer, Integer>() {
+                        @Override
+                        public Integer apply(Integer cardIndex) {
+                            return hand[cardIndex].getValue();
+                        }
+                    }
+                ).getValue()
+            )
+            /
+            (float)(
+                Linq.max(
+                    CardUtils.getPossibleCardValues(),
+                    new Identity<Integer>()
+                ).getValue()
+            );
+        float paramIsValueHint = valueHint.hasValue() ? (float)1.0 : (float)0.0;
+        float paramIsColourHint = colourHint.hasValue() ? (float)1.0 : (float)0.0;
+        float utility =
+            (
+                (weightingForPointingAtMoreCards * paramPercentageOfHandPointedTo) +
+                (weightingForRevealingPlayableCards * paramPercentageOfCardsInHandThatWerePointedAndArePlayable) +
+                (weightingForHigherValues * paramAverageValueOfPointedAtCards) +
+                (weightingForColourOverValue * paramIsColourHint) +
+                (weightingForValueOverColour * paramIsValueHint)
+            );
+
+        System.out.println("\t\tPOINTED AT " + Arrays.toString(pointedAtCardIndexes.toArray(new Integer[0])));
         System.out.println("\t\tDETERMINED UTILITY OF HINT = " + ((Float)utility).toString());
+        System.out.println("\t\t  > weightingForPointingAtMoreCards = " + ((Float)(weightingForPointingAtMoreCards * paramPercentageOfHandPointedTo)).toString());
+        System.out.println("\t\t  > weightingForRevealingPlayableCards = " + ((Float)(weightingForRevealingPlayableCards * paramPercentageOfCardsInHandThatWerePointedAndArePlayable)).toString());
+        System.out.println("\t\t  > weightingForHigherValues = " + ((Float)(weightingForHigherValues * paramAverageValueOfPointedAtCards)).toString());
+        System.out.println("\t\t  > weightingForColourOverValue = " + ((Float)(weightingForColourOverValue * paramIsColourHint)).toString());
+        System.out.println("\t\t  > weightingForValueOverColour = " + ((Float)(weightingForValueOverColour * paramIsValueHint)).toString());
         return new HintUtilityCalculation(
             playerIndex,
             utility,

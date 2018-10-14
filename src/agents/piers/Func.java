@@ -11,4 +11,13 @@ public interface Func<T1, R> {
             }
         };
     }
+
+    public static <T1> Func<T1, T1> identity() {
+        return new Func<T1, T1>() {
+            @Override
+            public T1 apply(T1 arg) {
+                return arg;
+            }
+        };
+    }
 }

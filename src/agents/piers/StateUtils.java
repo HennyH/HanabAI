@@ -245,6 +245,10 @@ public class StateUtils {
         return a.getType() == ActionType.DISCARD;
     }
 
+    public static boolean isPlayFireworksAction(Action a) {
+        return a.getType() == ActionType.PLAY;
+    }
+
     public static boolean isActionOfPlayer(Action a, int playerIndex) {
         return a.getPlayer() == playerIndex;
     }
@@ -253,7 +257,14 @@ public class StateUtils {
         hints = hints.clone();
 
         try {
-            if (StateUtils.isDiscardAction(a)) {
+            /* If we are discarding or playing a card into the fireworks it
+             * is leaving our hand. We then (except for the final round)
+             * draw a new card but we have no hints regarding it hence we
+             * create a new empty CardHint object. We create an object even
+             * in the siutation where we didn't draw a card... This simplifies
+             * logic elsewhere because we can always assume #hand = #cardHints.
+             */
+            if (StateUtils.isDiscardAction(a) || StateUtils.isPlayFireworksAction(a)) {
                 int hintIndex = a.getCard();
                 hints[hintIndex] = new CardHint(playerIndex, hintIndex);
             } else if (StateUtils.isHintActionForPlayer(a, playerIndex)) {

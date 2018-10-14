@@ -14,6 +14,14 @@ public class Linq {
         return result;
     }
 
+    public static <T, R> ArrayList<R> map(ArrayList<T> source, Func<T, R> selector) {
+        ArrayList<R> result = new ArrayList<R>();
+        for (T obj : source) {
+            result.add(selector.apply(obj));
+        }
+        return result;
+    }
+
     public static <T> int count(ArrayList<T> source, Func<T, Boolean> predicate) {
         int seen = 0;
         for (T obj : source) {
@@ -22,6 +30,23 @@ public class Linq {
             }
         }
         return seen;
+    }
+
+    public static <T, R extends Comparable<R>> Maybe<T> max(ArrayList<T> source, Func<T, R> selector) {
+        T maxObj = null;
+        R maxObjProjection = null;
+        for (T obj : source) {
+            R projection = selector.apply(obj);
+            if (maxObj == null) {
+                maxObj = obj;
+                maxObjProjection = projection;
+            } else if (projection.compareTo(maxObjProjection) >= 0) {
+                maxObj = obj;
+                maxObjProjection = projection;
+            }
+        }
+
+        return new Maybe<T>(maxObj);
     }
 
     public static <T> Maybe<T> first(ArrayList<T> source) {
@@ -47,6 +72,16 @@ public class Linq {
             total += obj;
         }
         return total;
+    }
+
+    public static <T> Maybe<Float> avg(ArrayList<T> source, Func<T, Integer> selector) {
+        Integer total = 0;
+        for (T obj : source) {
+            total += selector.apply(obj);
+        }
+        return source.size() > 0
+            ? new Maybe<Float>((float)total / (float)source.size())
+            : new Maybe<Float>(null);
     }
 
     public static <T> ArrayList<T> removeInstanceWise(ArrayList<T> source, ArrayList<T> other) {
