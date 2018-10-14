@@ -19,6 +19,7 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
     private float _weightingForColourOverValue;
     private float _weightingForHigherValues;
     private float _weightingForRevealingPlayableCard;
+    private float _weightingForRevealingAUselessCard;
 
     public TellAnyoneAboutUsefulCardRule(
             int playerIndex,
@@ -27,7 +28,8 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
             float weightingForValueOverColour,
             float weightingForColourOverValue,
             float weightingForHigherValues,
-            float weightingForRevealingPlayableCard
+            float weightingForRevealingPlayableCard,
+            float weightingForRevealingAUselessCard
     ) {
         this._playerIndex = playerIndex;
         this._usefullnessThreshold = usefullnessThreshold;
@@ -36,32 +38,14 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
         this._weightingForColourOverValue = weightingForColourOverValue;
         this._weightingForHigherValues = weightingForHigherValues;
         this._weightingForRevealingPlayableCard = weightingForRevealingPlayableCard;
-    }
-
-    private static Func<CardHint, Boolean> getFullyResolvedHintFilter() {
-        return new Func<CardHint, Boolean>() {
-            @Override
-            public Boolean apply(CardHint hint) {
-                return hint.maybeGetActualColour().hasValue() && hint.maybeGetActualValue().hasValue();
-            }
-        };
+        this._weightingForRevealingAUselessCard = weightingForRevealingAUselessCard;
     }
 
     @Override
 	public Action play(State s) {
-        /* for each player figure out their view of their hand */
-            /* remove cards they already know for ceartin */
-                /* remove cards which even if they knew wouldn't be immedietly playable */
-                    /* pick lowest value card to give hint for */
-                        /* choose hint at random */
-
         HintUtilityCalculation bestHintCalculation = null;
 
-        System.out.println("PLAYER " + ((Integer)this._playerIndex).toString()  + " IS LOOKING FOR HINT TO GIVE");
-
         for (int otherPlayerIndex : StateUtils.getPlayersOtherThan(s, this._playerIndex)) {
-
-            System.out.println("\t LOOKING AT PLAYER " + ((Integer)otherPlayerIndex).toString());
 
             ArrayList<CardHint> ownViewOfHand = new ArrayList<CardHint>(
                 Arrays.asList(StateUtils.getHintsForPlayer(s, otherPlayerIndex))
@@ -73,16 +57,9 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
             ownViewOfHand = Linq.filter(
                 ownViewOfHand,
                 Func.invert(
-                    TellAnyoneAboutUsefulCardRule.getFullyResolvedHintFilter()
+                    CardHint.getFullyResolvedHintFilter()
                 )
             );
-            /* Remove cards that even if the player were to know about, they
-             * would not be able to play the card safely.
-             */
-            // ownViewOfHand = Linq.filter(
-            //     ownViewOfHand,
-            //     TellAnyoneAboutUsefulCardRule.getCardOfFullyResolvedHintUnplayableFilter(s, otherPlayerIndex)
-            // );
 
             /* Figure out what possible hints we could give. */
             HashSet<Colour> possibleColoursToReveal = new HashSet<Colour>();
@@ -113,16 +90,6 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
                 }
             }
 
-            System.out.println("\n\t OWN VIEW:");
-            System.out.println("\t " + Arrays.toString(ownViewOfHand.toArray()));
-            System.out.println("\t OUTSIDE VIEW:");
-            System.out.println("\t " + Arrays.toString(outsideViewOfHand));
-            System.out.println("\t COLOUR HINTS:");
-            System.out.println("\t " + Arrays.toString(possibleColoursToReveal.toArray()));
-            System.out.println("\t VALUE HINTS:");
-            System.out.println("\t " + Arrays.toString(possibleValuesToReveal.toArray()));
-            System.out.println("\t --------------\t");
-
             /* We now have all the possible hints we could give to the player.
              * Examine each one.
              */
@@ -136,7 +103,8 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
                     this._weightingForValueOverColour,
                     this._weightingForColourOverValue,
                     this._weightingForHigherValues,
-                    this._weightingForRevealingPlayableCard
+                    this._weightingForRevealingPlayableCard,
+                    this._weightingForRevealingAUselessCard
                 );
 
                 if (bestHintCalculation == null) {
@@ -155,7 +123,8 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
                     this._weightingForValueOverColour,
                     this._weightingForColourOverValue,
                     this._weightingForHigherValues,
-                    this._weightingForRevealingPlayableCard
+                    this._weightingForRevealingPlayableCard,
+                    this._weightingForRevealingAUselessCard
                 );
 
                 if (bestHintCalculation == null) {
@@ -167,11 +136,6 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
         }
 
         if (bestHintCalculation != null && bestHintCalculation.getUtility() >= this._usefullnessThreshold) {
-            System.out.println("\t GIVING HINT TO PLAYER " + ((Integer)bestHintCalculation.getPlayerRecievingHintIndex()).toString());
-            System.out.println("\t colour = " + bestHintCalculation.getHintedColour().toString() + "\t value = " + bestHintCalculation.getHintedValue().toString());
-            System.out.println("\t " + (Arrays.toString(bestHintCalculation.getCardPointedAtArray())));
-            System.out.println("\t -------------------");
-
             try {
                 if (bestHintCalculation.getHintedColour().hasValue()) {
                     return new Action(

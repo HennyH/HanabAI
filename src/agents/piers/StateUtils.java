@@ -331,23 +331,7 @@ public class StateUtils {
                 playerIndex,
                 a
             );
-
-            // Maybe<Colour> actionHintColour = new Maybe<Colour>(null);
-            // Maybe<Integer> actionHintValue = new Maybe<Integer>(null);
-            // try {
-            //     if (a.getType() == ActionType.HINT_COLOUR) {
-            //     actionHintColour = new Maybe<Colour>(a.getColour());
-            //     } else if (a.getType() == ActionType.HINT_VALUE) {
-            //         actionHintValue = new Maybe<Integer>(a.getValue());
-            //     }
-
-            //     if (playerIndex == a.getHintReceiver()) {
-            //         System.out.println("> Hint colour = " + actionHintColour.toString() + " value = " + actionHintValue.toString() + " --> " + Arrays.toString(runningHints));
-            //     }
-            // } catch (Exception ex) {}
         }
-
-        // System.out.println("> " + Arrays.toString(runningHints));
 
         return runningHints;
     }
@@ -417,6 +401,35 @@ public class StateUtils {
         }
 
         return new Maybe<Card>(null);
+    }
+
+    public static ArrayList<Card> getFuturePlayableCards(State s) {
+        /* Anything in the discard pile will never be picked up and played again */
+        ArrayList<Card> futurePlayableCards = Linq.removeInstanceWise(
+            DeckUtils.getHanabiDeck(),
+            new ArrayList<Card>(Arrays.asList(s.getDiscards().toArray(new Card[0])))
+        );
+        /* Anything whose value is less than or equal to the current value
+         * of the highest firework of its colour won't ever be successfully
+         * played.
+         */
+        futurePlayableCards = Linq.filter(
+            futurePlayableCards,
+            new Func<Card, Boolean>() {
+                @Override
+                public Boolean apply(Card card) {
+                    Maybe<Card> topCard = StateUtils.getTopFireworksCardForColour(
+                        s,
+                        card.getColour()
+                    );
+                    if (topCard.hasValue()) {
+                        return card.getValue() > topCard.getValue().getValue();
+                    }
+                    return false;
+                }
+            }
+        );
+        return futurePlayableCards;
     }
 
 }

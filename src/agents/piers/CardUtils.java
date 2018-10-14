@@ -63,7 +63,10 @@ public class CardUtils {
     }
 
     public static boolean hintMatchesCard(Card c, CardHint hint) {
-        return hint.getPossibleCards().contains(c);
+        return
+            hint.maybeGetActualColour().hasValue()
+            && hint.maybeGetActualValue().hasValue()
+            && hint.getPossibleCards().contains(c);
     }
 
     public static Func<Card, Boolean> getColorFilter(Colour colour) {
@@ -110,6 +113,19 @@ public class CardUtils {
                 return false;
             }
         };
+    }
+
+    public static boolean isCardUselessNowAndInTheFuture(State s, CardHint ownView) {
+        ArrayList<Card> unplayableCards = Linq.notElementsOf(
+            DeckUtils.getHanabiDeck(),
+            StateUtils.getFuturePlayableCards(s)
+        );
+        for (Card unplayableCard : unplayableCards) {
+            if (CardUtils.hintMatchesCard(unplayableCard, ownView)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isCardSafeToPlayFromOwnView(State s, CardHint ownView) {
@@ -246,14 +262,17 @@ public class CardUtils {
     public static HintUtilityCalculation calculateUtilityOfHintInformationForPlayer(
             State s,
             int playerIndex,
-            Maybe<Colour> colourHint,
-            Maybe<Integer> valueHint,
+            Either<Colour, Integer> hint,
             float weightingForPointingAtMoreCards,
             float weightingForValueOverColour,
             float weightingForColourOverValue,
             float weightingForHigherValues,
-            float weightingForRevealingPlayableCards
+            float weightingForRevealingPlayableCards,
+            float weightingForRevealingAUselessCard
     ) {
+        Maybe<Colour> colourHint = hint.getLeft();
+        Maybe<Integer> valueHint = hint.getRight();
+
         if (StateUtils.getCurrentPlayer(s) == playerIndex) {
             throw new IllegalArgumentException(
                 "Cannot determine utility of a hint from the current player " +
@@ -326,7 +345,7 @@ public class CardUtils {
         float playersHandSize = (float)StateUtils.getNumberOfCardsInPlayersHand(s, playerIndex);
         float paramPercentageOfHandPointedTo =
             (float)pointedAtCardIndexes.size() / playersHandSize;
-        float paramPercentageOfCardsInHandThatWerePointedAndArePlayable =
+        float paramPercentageOfCardsInHandThatWerePointedAtAndAreNowKnownToBePlayable =
             (float)(
                 Linq.filter(
                     pointedAtCardIndexes,
@@ -348,6 +367,24 @@ public class CardUtils {
             )
             /
             playersHandSize;
+
+        float paramPercentageOfCardsInHandThatWerePointedAtAndAreNowKownToBeUseless =
+                (float)(
+                    Linq.filter(
+                        pointedAtCardIndexes,
+                        new Func<Integer, Boolean>() {
+                            @Override
+                            public Boolean apply(Integer cardIndex) {
+                                CardHint newOwnViewOfCard = valueHint.hasValue()
+                                    ? CardHint.is(playersViewOfCards[cardIndex], valueHint.getValue())
+                                    : CardHint.is(playersViewOfCards[cardIndex], colourHint.getValue());
+                                return CardUtils.isCardUselessNowAndInTheFuture(s, newOwnViewOfCard);
+                            }
+                        }
+                    ).size()
+                )
+                /
+                playersHandSize;
         float paramAverageValueOfPointedAtCards =
             (float)(
                 Linq.avg(
@@ -372,7 +409,8 @@ public class CardUtils {
         float utility =
             (
                 (weightingForPointingAtMoreCards * paramPercentageOfHandPointedTo) +
-                (weightingForRevealingPlayableCards * paramPercentageOfCardsInHandThatWerePointedAndArePlayable) +
+                (weightingForRevealingPlayableCards * paramPercentageOfCardsInHandThatWerePointedAtAndAreNowKnownToBePlayable) +
+                (weightingForRevealingAUselessCard * paramPercentageOfCardsInHandThatWerePointedAtAndAreNowKownToBeUseless) +
                 (weightingForHigherValues * paramAverageValueOfPointedAtCards) +
                 (weightingForColourOverValue * paramIsColourHint) +
                 (weightingForValueOverColour * paramIsValueHint)
@@ -381,7 +419,7 @@ public class CardUtils {
         System.out.println("\t\tPOINTED AT " + Arrays.toString(pointedAtCardIndexes.toArray(new Integer[0])));
         System.out.println("\t\tDETERMINED UTILITY OF HINT = " + ((Float)utility).toString());
         System.out.println("\t\t  > weightingForPointingAtMoreCards = " + ((Float)(weightingForPointingAtMoreCards * paramPercentageOfHandPointedTo)).toString());
-        System.out.println("\t\t  > weightingForRevealingPlayableCards = " + ((Float)(weightingForRevealingPlayableCards * paramPercentageOfCardsInHandThatWerePointedAndArePlayable)).toString());
+        System.out.println("\t\t  > weightingForRevealingPlayableCards = " + ((Float)(weightingForRevealingPlayableCards * paramPercentageOfCardsInHandThatWerePointedAtAndAreNowKnownToBePlayable)).toString());
         System.out.println("\t\t  > weightingForHigherValues = " + ((Float)(weightingForHigherValues * paramAverageValueOfPointedAtCards)).toString());
         System.out.println("\t\t  > weightingForColourOverValue = " + ((Float)(weightingForColourOverValue * paramIsColourHint)).toString());
         System.out.println("\t\t  > weightingForValueOverColour = " + ((Float)(weightingForValueOverColour * paramIsValueHint)).toString());

@@ -73,10 +73,8 @@ def plt_histogram(values):
     ax.set_xlabel("Scores")
     ax.set_ylabel("Probability Density")
     ax.set_title("Performance")
-    plt.show()
     plt.savefig("results.svg", format="svg")
-
-
+    plt.show()
 
 
 

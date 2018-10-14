@@ -1,20 +1,5 @@
-package agents.piers;
-
-import java.util.Arrays;
-
-import agents.BasicAgent;
-import hanabAI.Action;
-import hanabAI.Agent;
-import hanabAI.State;
-
-public class PiersAgent implements Agent {
-
-    @Override
-    public String toString() {
-        return "PIERS";
-    }
-
-    @Override
+```java
+@Override
     public Action doAction(State s) {
         int player = StateUtils.getCurrentPlayer(s);
 		IRule policy = new RuleSequenceRule(
@@ -85,8 +70,4 @@ public class PiersAgent implements Agent {
             IfRule.allowedToDiscardACard(new DiscardRandomRule(player)),
             new FallbackRule()
         );
-
-        return policy.play(s);
-	}
-
-}
+```

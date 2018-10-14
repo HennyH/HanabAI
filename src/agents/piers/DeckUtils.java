@@ -71,26 +71,4 @@ public class DeckUtils {
             }
         };
     }
-
-    public static Func<Card, Boolean> getKnownCardsFilter(State s, int playerIndex) {
-        return new Func<Card, Boolean>() {
-            @Override
-            public Boolean apply(Card card) {
-                for (Card otherPlayersCard : StateUtils.getOtherPlayersCards(s, playerIndex)) {
-                    if (otherPlayersCard.equals(card)) {
-                        /* filter out */
-                        return false;
-                    }
-                }
-                for (CardHint hint : StateUtils.getHintsForPlayer(s, playerIndex)) {
-                    if (CardUtils.hintMatchesCard(card, hint)) {
-                        /* filter out */
-                        return false;
-                    }
-                }
-                /* keep in */
-                return true;
-            }
-        };
-    }
 }

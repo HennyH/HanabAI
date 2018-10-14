@@ -42,31 +42,7 @@ public class OsawaDiscardRule implements IRule {
         }
 
         /* Figure out what cards could be played in the future. */
-        /* Anything in the discard pile will never be played again */
-        ArrayList<Card> futurePlayableCards = Linq.removeInstanceWise(
-            DeckUtils.getHanabiDeck(),
-            new ArrayList<Card>(Arrays.asList(s.getDiscards().toArray(new Card[0])))
-        );
-        /* Anything whose value is less than or equal to the current value
-         * of the highest firework of its colour won't ever be successfully
-         * played.
-         */
-        futurePlayableCards = Linq.filter(
-            futurePlayableCards,
-            new Func<Card, Boolean>() {
-                @Override
-                public Boolean apply(Card card) {
-                    Maybe<Card> topCard = StateUtils.getTopFireworksCardForColour(
-                        s,
-                        card.getColour()
-                    );
-                    if (topCard.hasValue()) {
-                        return card.getValue() > topCard.getValue().getValue();
-                    }
-                    return false;
-                }
-            }
-        );
+        ArrayList<Card> futurePlayableCards = StateUtils.getFuturePlayableCards(s);
 
         for (CardHint viewOfCard : StateUtils.getHintsForPlayer(s, this._playerIndex)) {
             for (Card futurePlayableCard : futurePlayableCards) {

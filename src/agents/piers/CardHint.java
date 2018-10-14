@@ -105,6 +105,15 @@ public class CardHint
         );
     }
 
+    public static Func<CardHint, Boolean> getFullyResolvedHintFilter() {
+        return new Func<CardHint, Boolean>() {
+            @Override
+            public Boolean apply(CardHint hint) {
+                return hint.maybeGetActualColour().hasValue() && hint.maybeGetActualValue().hasValue();
+            }
+        };
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

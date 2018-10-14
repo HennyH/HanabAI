@@ -2,8 +2,11 @@ package agents.piers;
 
 import java.util.ArrayList;
 
+import hanabAI.Action;
 import hanabAI.ActionType;
 import hanabAI.Colour;
+import hanabAI.IllegalActionException;
+import hanabAI.State;
 
 public class HintUtilityCalculation {
 
@@ -44,6 +47,28 @@ public class HintUtilityCalculation {
         this._hintedColour = hintedColour;
         this._hintedValue = hintedValue;
         this._pointedAtCardIndexes = pointedAtCardIndexes;
+    }
+
+    public static Action convertToAction(State s, int playerGivingHint, HintUtilityCalculation calculation) throws IllegalActionException {
+        if (calculation.getHintedColour().hasValue()) {
+            return new Action(
+                playerGivingHint,
+                s.getName(playerGivingHint),
+                calculation.getHintActionType(),
+                calculation.getPlayerRecievingHintIndex(),
+                calculation.getCardPointedAtArray(),
+                calculation.getHintedColour().getValue()
+            );
+        } else {
+            return new Action(
+                playerGivingHint,
+                s.getName(playerGivingHint),
+                calculation.getHintActionType(),
+                calculation.getPlayerRecievingHintIndex(),
+                calculation.getCardPointedAtArray(),
+                calculation.getHintedValue().getValue()
+            );
+        }
     }
 
     public int getPlayerRecievingHintIndex() { return this._playerRecievingHintIndex; }

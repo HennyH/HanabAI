@@ -22,6 +22,18 @@ public class IfRule implements IRule {
         return null;
     }
 
+    public static IfRule isLastTurn(int playerIndex, IRule consequence) {
+        return new IfRule(
+            new Func<State, Boolean>() {
+                @Override
+                public Boolean apply(State s) {
+                    return !StateUtils.doesPlayerHaveAPossibleTurnLeft(s, playerIndex);
+                }
+            },
+            consequence
+        );
+    }
+
     public static IfRule allowedToDiscardACard(IRule consequence) {
         return new IfRule(
             new Func<State, Boolean>() {
@@ -43,6 +55,18 @@ public class IfRule implements IRule {
                 @Override
                 public Boolean apply(State s) {
                     return s.getHintTokens() >= n;
+                }
+            },
+            consequence
+        );
+    }
+
+    public static IfRule atMostNHintsLeft(int n, IRule consequence) {
+        return new IfRule(
+            new Func<State, Boolean>() {
+                @Override
+                public Boolean apply(State s) {
+                    return s.getHintTokens() <= n;
                 }
             },
             consequence
