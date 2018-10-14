@@ -13,14 +13,13 @@ public class HintUtils {
     public static Maybe<HintUtilityCalculation> determineBestHintToGive(
                 State s,
                 int playerRecievingHint,
-                Func<CardHint, Boolean> viewOfCardAfterHintFilter,
+                Func<CardHint, Boolean> hintFilter,
                 float weightingForPointingAtMoreCards,
                 float weightingForValueOverColour,
                 float weightingForColourOverValue,
                 float weightingForHigherValues,
                 float weightingForRevealingPlayableCard,
-                float weightingForRevealingAUselessCard,
-                Maybe<Float> utilityThreshold
+                float weightingForRevealingAUselessCard
     ) {
         ArrayList<CardHint> ownViewOfHand = new ArrayList<CardHint>(
             Arrays.asList(StateUtils.getHintsForPlayer(s, playerRecievingHint))
@@ -54,7 +53,7 @@ public class HintUtils {
             if (!ownViewOfCard.maybeGetActualColour().hasValue()) {
                 Colour hintableColour = outsideViewOfCard.getColour();
                 CardHint viewOfCardAfterHint = CardHint.is(ownViewOfCard, hintableColour);
-                if (viewOfCardAfterHintFilter.apply(viewOfCardAfterHint)
+                if (hintFilter.apply(viewOfCardAfterHint)
                         && !possibleColoursToReveal.contains(hintableColour)
                 ) {
                     possibleColoursToReveal.add(hintableColour);
@@ -64,7 +63,7 @@ public class HintUtils {
             if (!ownViewOfCard.maybeGetActualValue().hasValue()) {
                 Integer hintableValue = outsideViewOfCard.getValue();
                 CardHint viewOfCardAfterHint = CardHint.is(ownViewOfCard, hintableValue);
-                if (viewOfCardAfterHintFilter.apply(viewOfCardAfterHint)
+                if (hintFilter.apply(viewOfCardAfterHint)
                         && !possibleValuesToReveal.contains(hintableValue)
                 ) {
                     possibleValuesToReveal.add(hintableValue);

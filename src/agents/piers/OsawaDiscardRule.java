@@ -19,6 +19,10 @@ public class OsawaDiscardRule implements IRule {
 
     @Override
 	public Action play(State s) {
+        if (!StateUtils.isDiscardActionAllowed(s)) {
+            return null;
+        }
+
         /* If we know the colour and value of the card and it is not immedietly
          * playable we will discard it.
          */

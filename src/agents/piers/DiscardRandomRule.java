@@ -17,6 +17,10 @@ public class DiscardRandomRule implements IRule {
 
     @Override
 	public Action play(State s) {
+        if (!StateUtils.isDiscardActionAllowed(s)) {
+            return null;
+        }
+
 		try {
             return new Action(
                 this._playerIndex,

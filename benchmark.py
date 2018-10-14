@@ -58,11 +58,8 @@ def simulate_game(number_players):
         check=True
     )
     match = re.search(r"The final score is (?P<score>\d+).", result.stdout)
-    if match is None:
-        print(result.stdout, file=sys.stderr)
-        print(result.stdout, file=sys.stderr)
-        raise Exception("Could not find score in stdout.")
-    return int(match.group("score"))
+    score = -1 if match is None else int(match.group("score"))
+    return result, score
 
 
 def plt_histogram(values):
@@ -77,6 +74,12 @@ def plt_histogram(values):
     plt.show()
 
 
+def write_debug_log(game_no, game_proc, log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+    with open(os.path.join(log_dir, "game-{}.txt".format(game_no)), "w+") as f:
+        f.write(game_proc.stderr)
+        f.write(game_proc.stdout)
+
 
 def main(argv=None):
     """Entry points for the benchmarker."""
@@ -85,7 +88,6 @@ def main(argv=None):
     parser.add_argument("--players",
                         metavar="NUMBER_PLAYERS",
                         type=int,
-                        required=True,
                         default=5,
                         nargs="?",
                         help="""Number of players in the game.""",
@@ -93,22 +95,37 @@ def main(argv=None):
     parser.add_argument("--iterations",
                         metavar="ITERATIONS",
                         type=int,
-                        required=True,
-                        default=1000,
+                        default=50,
                         nargs="?",
                         help="""Number games to play.""",
                         dest="iterations")
+    parser.add_argument("--debug-score",
+                        metavar="DEBUG_SCORE",
+                        type=int,
+                        default=0,
+                        help="""Score below which to dump game logs.""",
+                        dest="debug_score")
+    parser.add_argument("--debug-dump",
+                        metavar="DEBUG_SCORE",
+                        type=str,
+                        default=os.path.join(get_repo_dir(), "logs"),
+                        help="""Score below which to dump game logs.""",
+                        dest="log_dir")
     result = parser.parse_args(argv)
 
     compile()
-    results = []
+
+    scores = []
     for i in tqdm(range(result.iterations)):
-        results.append((i, simulate_game(result.number_players)))
+        proc, score = simulate_game(result.number_players)
+        if score <= result.debug_score:
+            write_debug_log(i, proc, result.log_dir)
+            print("Wrote debug log for game {}".format(i), file=sys.stderr)
+        if score == -1:
+            continue
+        scores.append(score)
 
-    for i, score in results:
-        print(i, score)
-
-    plt_histogram([score for i, score in results])
+    plt_histogram(scores)
 
 if __name__ == "__main__":
     main()

@@ -3,13 +3,13 @@ import java.util.*;
 /**
  * Represent the game state in Hanabi.
  * The state is designed as an immutable object.
- * Agents are able to get the current game state, 
+ * Agents are able to get the current game state,
  * and all previous moves using a state object.
  * @author Tim French
  **/
 
 public class State implements Cloneable{
-  
+
 
   /**The name of each of the players in the game**/
   private String[] players;
@@ -49,12 +49,12 @@ public class State implements Cloneable{
     for(Colour c: Colour.values())fireworks.put(c,new Stack<Card>());
     hands = new Card[players.length][players.length>3?4:5];
     for(int i = 0; i<hands.length; i++)
-      for(int j = 0; j<hands[i].length; j++) 
+      for(int j = 0; j<hands[i].length; j++)
         hands[i][j]=deck.pop();
     order = 0;
     hints = 8;
     fuse = 3;
-    observer = -1;  
+    observer = -1;
     nextPlayer = 0;
     finalAction = -1;
   }
@@ -88,7 +88,7 @@ public class State implements Cloneable{
         if(finalAction==-1) s.finalAction = order+players.length;
         s.hands[action.getPlayer()][action.getCard()] = null;
        }
-       break;  
+       break;
      case DISCARD:
        c = hands[action.getPlayer()][action.getCard()];
        s.discards.push(c);
@@ -99,23 +99,23 @@ public class State implements Cloneable{
        }
        if(hints<8) s.hints++;
        break;
-     case HINT_COLOUR: 
-       s.hints--; 
+     case HINT_COLOUR:
+       s.hints--;
        break;
-     case HINT_VALUE: 
+     case HINT_VALUE:
        s.hints--;
        break;
      default: break;
    }
    s.order++;
    s.previousAction = action;
-   s.nextPlayer = (nextPlayer+1)%players.length; 
-   s.previousState = this;  
+   s.nextPlayer = (nextPlayer+1)%players.length;
+   s.previousState = this;
    return s;
   }
 
   /**
-   *A method to create a local state from a global state. 
+   *A method to create a local state from a global state.
    *That is, if there is no current observer, the specified observer will have their hand hidden from them.
    *@param observer the player observing the game state
    *@throws IllegalActionException if the observer is out of bounds, or if the state is not global.
@@ -128,10 +128,10 @@ public class State implements Cloneable{
     }
     else throw new IllegalActionException("Hand already hidden, or observer out of bounds");
   }
-  
+
   /**
    * Test the legality of a Action.
-   * If the observer of a state is specified, this mathod can only be applied to actions performed by the observer. 
+   * If the observer of a state is specified, this mathod can only be applied to actions performed by the observer.
    * @param a the move to be tested
    * @return true if the move is legal in the current game state.
    * @throws IllegalActionException
@@ -141,12 +141,12 @@ public class State implements Cloneable{
     if(a.getPlayer()!=nextPlayer) return false;
     switch(a.getType()){
       case PLAY:
-        return (a.getCard()>=0 && a.getCard()<hands[nextPlayer].length); 
-      case DISCARD: 
+        return (a.getCard()>=0 && a.getCard()<hands[nextPlayer].length);
+      case DISCARD:
         if(hints==8) throw new IllegalActionException("Discards cannot be made when there are 8 hint tokens");
         return (a.getCard()>=0 && a.getCard()<hands[nextPlayer].length);
       case HINT_COLOUR:
-        if(hints==0 || a.getHintReceiver() <0 || a.getHintReceiver()>players.length || a.getHintReceiver() == a.getPlayer()) return false; 
+        if(hints==0 || a.getHintReceiver() <0 || a.getHintReceiver()>players.length || a.getHintReceiver() == a.getPlayer()) return false;
         boolean[] hint = new boolean[hands[a.getHintReceiver()].length];
         for(int i = 0; i<hint.length; i++){
           Card c = hands[a.getHintReceiver()][i];
@@ -154,31 +154,33 @@ public class State implements Cloneable{
         }
         return Arrays.equals(hint, a.getHintedCards());
       case HINT_VALUE:
-        if(hints==0 || a.getHintReceiver() <0 || a.getHintReceiver()>players.length || a.getHintReceiver() == a.getPlayer()) return false; 
-        hint = new boolean[hands[a.getHintReceiver()].length];
-        for(int i = 0; i<hint.length; i++){
+        if(hints==0 || a.getHintReceiver() <0 || a.getHintReceiver()>players.length || a.getHintReceiver() == a.getPlayer()) return false;
+        boolean[] hint2 = new boolean[hands[a.getHintReceiver()].length];
+        for(int i = 0; i<hint2.length; i++){
           Card c = hands[a.getHintReceiver()][i];
-          hint[i] = (c==null?-1:c.getValue())==a.getValue();
+          hint2[i] = (c==null?-1:c.getValue())==a.getValue();
         }
-        return Arrays.equals(hint, a.getHintedCards());
+        System.out.println(Arrays.toString(hint2));
+        System.out.println(Arrays.toString(a.getHintedCards()));
+        return Arrays.equals(hint2, a.getHintedCards());
       default: return false;
     }
   }
-  
+
   /**
    * Gives and array of all the player names in the game.
    * @return an array containing the naems of the players in the game, by ther index in the game.
    **/
   public String[] getPlayers(){
    return players.clone();
-  } 
-  
+  }
+
   /**
    * Gives the cards of the specified player
    * @param player the index of the player is the game
    * @return an array of cards in player's hand, or an empty array, if the cards are hidden.
    * @throws ArrayIndexOutOfBounds if there is no player of the given index.
-   **/  
+   **/
   public Card[] getHand(int player)throws ArrayIndexOutOfBoundsException{
     if(player<0 || player>=players.length) throw new ArrayIndexOutOfBoundsException();
     if(player==observer) return new Card[hands[player].length];
@@ -222,10 +224,10 @@ public class State implements Cloneable{
   }
 
   /**
-   * Gets the card played in the previous move, 
-   * or null if it is the first move, 
+   * Gets the card played in the previous move,
+   * or null if it is the first move,
    * or the previous move was a hint.
-   * @return the card played in the previous action, 
+   * @return the card played in the previous action,
    * or null if there is no previous action, or the action was a hint.
    * */
   public Card previousCardPlayed(){
@@ -236,7 +238,7 @@ public class State implements Cloneable{
   }
 
 
-  /** 
+  /**
    * Gets a clone of the discard stack
    * @return a clone of the discard stack
    **/
@@ -275,7 +277,7 @@ public class State implements Cloneable{
    * @return the agent index of the nextplayer, or -1 if the game is over.
    **/
   public int getNextPlayer(){return (gameOver()?-1:nextPlayer);}
-  
+
   /**
    * Gets the order of the state, starting from 1.
    * @return the order the state appears in the game, from first (1) to last.
@@ -285,11 +287,11 @@ public class State implements Cloneable{
   /**
    * Returns the order of the final action, if it is known.
    * When the final card is drawn from the deck, every player has one more action remaining.
-   * The order of the final action, is the order of the action that drew the final card, 
+   * The order of the final action, is the order of the action that drew the final card,
    * plus the number of players in the game.
    * @return the order of the final action, or -1 if the deck is not empty
    **/
-  public int getFinalActionIndex(){return finalAction;} 
+  public int getFinalActionIndex(){return finalAction;}
 
   /**
    * Get the current score
@@ -298,7 +300,7 @@ public class State implements Cloneable{
   public int getScore(){
     int score = 0;
     if(fuse==0) return 0;
-    for(Colour c: Colour.values()) 
+    for(Colour c: Colour.values())
       if(!fireworks.get(c).isEmpty())score+=fireworks.get(c).peek().getValue();
     return score;
   }
@@ -329,7 +331,7 @@ public class State implements Cloneable{
   }
 
   /**
-   * Returns a string describing the state of the game, including: 
+   * Returns a string describing the state of the game, including:
    * the state of each players hand;
    * the top card of each fire work;
    * and the last action.

@@ -38,17 +38,12 @@ public class TellAnyoneAboutUselessCardRule implements IRule {
         this._weightingForRevealingAUselessCard = weightingForRevealingAUselessCard;
     }
 
-    private static Func<CardHint, Boolean> getFullyResolvedHintFilter() {
-        return new Func<CardHint, Boolean>() {
-            @Override
-            public Boolean apply(CardHint hint) {
-                return hint.maybeGetActualColour().hasValue() && hint.maybeGetActualValue().hasValue();
-            }
-        };
-    }
-
     @Override
 	public Action play(State s) {
+        if (!StateUtils.isHintActionAllowed(s)) {
+            return null;
+        }
+
         /* We're only to give a hint that reveals to someone that a card they
          * have should be discarded, but if there are several such cards we
          * should choose the hint that reveals to them the most useful
@@ -71,8 +66,7 @@ public class TellAnyoneAboutUselessCardRule implements IRule {
                 this._weightingForColourOverValue,
                 this._weightingForHigherValues,
                 this._weightingForRevealingPlayableCard,
-                this._weightingForRevealingAUselessCard,
-                new Maybe<Float>(null)
+                this._weightingForRevealingAUselessCard
             );
 
             if (!bestHintForPlayer.hasValue()) {

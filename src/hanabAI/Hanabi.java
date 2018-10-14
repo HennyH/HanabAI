@@ -1,5 +1,6 @@
 package hanabAI;
 
+import agents.BasicAgent;
 import agents.piers.PiersAgent;
 import agents.piers.StateUtils;
 
@@ -51,23 +52,17 @@ public class Hanabi{
    * @return the score of the game
    **/
   public int play(StringBuffer log){
-    log.append(state);
     try{
       while(!state.gameOver()){
-        log.append(state.toString());
-        Action[] pastActions = StateUtils.getChronologicalActions(state);
         int p = state.getNextPlayer();
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
-        log.append("\t\t PAST ACTIONS:\n\t\t--------\n");
-        for (Action pastAction : pastActions) {
-          log.append("\t\t " + pastAction.toString() + "\n");
-        }
-        log.append("\t\t END OF PAST ACTIONS:\n\t\t--------\n");
       }
+      log.append(StateUtils.formatGameHistory(state));
       return state.getScore();
     }
     catch(IllegalActionException e){
+      log.append(StateUtils.formatGameHistory(state));
       e.printStackTrace();
       log.append(e.toString());
       log.append(e.getStackTrace());
@@ -90,7 +85,7 @@ public class Hanabi{
    * The agent implementations should be in the default package.
    * */
   public static void main(String[] args){
-    Agent[] agents = {new PiersAgent(),new PiersAgent()};
+    Agent[] agents = {new PiersAgent(), new PiersAgent(), new PiersAgent(), new PiersAgent()};
     Hanabi game= new Hanabi(agents);
     StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
     int result = game.play(log);

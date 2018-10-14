@@ -72,20 +72,7 @@ public class PlayProbablySafeCardRule implements IRule {
             }
         }
 
-        System.out.println("----------START PLAY P(x) SAFE-----------");
-        System.out.println("PLAYER: " + ((Integer)this._playerIndex).toString());
-        System.out.println("POOL:");
-        System.out.println(Arrays.toString(cardPool.toArray()));
-        System.out.println("TARGETS:");
-        System.out.println(Arrays.toString(targetCards.toArray()));
-        System.out.println("HINTS:");
-        System.out.println(Arrays.toString(hints));
-        System.out.println("BEST CHOICE:");
-        System.out.println("CARD #: " + (bestCardHint == null ? "NONE" : ((Integer)bestCardHint.getCardIndex()).toString()));
-        System.out.println(bestCardSafeProbability);
-
         if (bestCardSafeProbability >= this._confidenceThreshold) {
-            System.out.println("Played!");
             try {
                 return new Action(
                     this._playerIndex,
@@ -96,12 +83,7 @@ public class PlayProbablySafeCardRule implements IRule {
             } catch (IllegalActionException ex) {
                 System.out.println(ex.getStackTrace());
             }
-        } else {
-            System.out.println("Not Played :(");
         }
-
-
-        System.out.println("----------END PLAY P(x) SAFE-----------");
 
         return null;
     }

@@ -56,7 +56,7 @@ public class HintUtilityCalculation {
                 s.getName(playerGivingHint),
                 calculation.getHintActionType(),
                 calculation.getPlayerRecievingHintIndex(),
-                calculation.getCardPointedAtArray(),
+                calculation.getCardPointedAtArray(s),
                 calculation.getHintedColour().getValue()
             );
         } else {
@@ -65,7 +65,7 @@ public class HintUtilityCalculation {
                 s.getName(playerGivingHint),
                 calculation.getHintActionType(),
                 calculation.getPlayerRecievingHintIndex(),
-                calculation.getCardPointedAtArray(),
+                calculation.getCardPointedAtArray(s),
                 calculation.getHintedValue().getValue()
             );
         }
@@ -77,8 +77,8 @@ public class HintUtilityCalculation {
     public Maybe<Colour> getHintedColour() { return this._hintedColour; }
     public Maybe<Integer> getHintedValue() { return this._hintedValue; }
 
-    public boolean[] getCardPointedAtArray() {
-        boolean[] pointedAt = new boolean[5];
+    public boolean[] getCardPointedAtArray(State s) {
+        boolean[] pointedAt = new boolean[StateUtils.getHandSize(s)];
         for (Integer cardIndex : this._pointedAtCardIndexes) {
             pointedAt[cardIndex] = true;
         }

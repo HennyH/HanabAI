@@ -27,17 +27,26 @@ public class StateUtils {
         return s;
     }
 
+    public static boolean isDiscardActionAllowed(State s) {
+        return s.getHintTokens() < 8;
+    }
+
+    public static boolean isHintActionAllowed(State s) {
+        return s.getHintTokens() > 1;
+    }
+
     public static int getNumberOfCardsInPlayersHand(State s, int playerIndex) {
         /* If they have a turn left they musn't have participated in the
-         * last round yet meaning they must have 5 cards.
+         * last round yet meaning they must have the initial number of cards.
          */
+        int initialNumberOfCards = StateUtils.getHandSize(s);
         if (StateUtils.doesPlayerHaveAPossibleTurnLeft(s, playerIndex)) {
-            return 5;
+            return initialNumberOfCards;
         }
 
         /* At this stage we know they have already made their final play.
          * Depending on what that final play was will determine if they
-         * have 5 or 4 cards.
+         * have the same or one less than the initial number.
          */
         try {
             Action actionOnFinalTurn = s.getPreviousAction(playerIndex);
@@ -45,12 +54,12 @@ public class StateUtils {
             if (typeOfFinalAction == ActionType.DISCARD
                     || typeOfFinalAction == ActionType.PLAY
             ) {
-                return 4;
+                return initialNumberOfCards - 1;
             } else {
-                return 5;
+                return initialNumberOfCards;
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            return 5;
+            return initialNumberOfCards;
         }
     }
 
@@ -392,6 +401,17 @@ public class StateUtils {
         return new Maybe<Card>(fireworks.pop());
     }
 
+    public static ArrayList<Card> getTopFireworksCards(State s) {
+        ArrayList<Card> topCards = new ArrayList<Card>();
+        for (Colour colour : CardUtils.getPossibleCardColours()) {
+            Stack<Card> fireworks = s.getFirework(colour);
+            if (!fireworks.empty()) {
+                topCards.add(fireworks.pop());
+            }
+        }
+        return topCards;
+    }
+
     public static Maybe<Card> getPlayableFireworkCardForColour(State s, Colour colour) {
         ArrayList<Card> fireworkCards = StateUtils.getPlayableFireworksCards(s);
         for (Card fireworkCard : fireworkCards) {
@@ -432,4 +452,66 @@ public class StateUtils {
         return futurePlayableCards;
     }
 
+
+    public static String formatGameHistory(State s) {
+        s = (State)s.clone();
+        ArrayDeque<State> states = new ArrayDeque<State>();
+        while (true) {
+            try {
+                states.addFirst(s);
+                State prevState = s.getPreviousState();
+                s = prevState;
+            } catch (Exception ex) {
+                break;
+            }
+        }
+
+        State[] chronologicalStates = states.toArray(new State[0]);
+        StringBuilder builder = new StringBuilder();
+        builder.append("GAME HISTORY\n------\n");
+        for (int i = 0; i < chronologicalStates.length; i++) {
+            State state = chronologicalStates[i];
+            Maybe<State> nextState = i + 1 <= chronologicalStates.length - 1
+                ? new Maybe<State>(chronologicalStates[i + 1])
+                : new Maybe<State>(null);
+            ArrayList<Card> fireworks = StateUtils.getTopFireworksCards(state);
+            builder.append(
+                String.format(
+                    "State %d: %n" +
+                    "\tFireworks: %s %n" +
+                    "\tHints: %d %n" +
+                    "\tFuses: %d %n",
+                    state.getOrder(),
+                    Arrays.toString(fireworks.toArray()),
+                    state.getHintTokens(),
+                    state.getFuseTokens()
+                )
+            );
+            builder.append("\tPlayers: \n");
+            for (int player : StateUtils.getAllPlayerIndexes(state)) {
+                builder.append(
+                    String.format(
+                        "\t\t%sPlayer %s (%d): %s with view %s %n",
+                        StateUtils.getCurrentPlayer(state) == player
+                            ? "* "
+                            : "  ",
+                        state.getName(player),
+                        player,
+                        Arrays.toString(state.getHand(player)),
+                        Arrays.toString(StateUtils.getHintsForPlayer(state, player))
+                    )
+                );
+            }
+            builder.append(
+                String.format(
+                    "\t>>> %s %n",
+                    nextState.hasValue()
+                        ? nextState.getValue().getPreviousAction().toString()
+                        : "BEGIN GAME"
+                )
+            );
+        }
+
+        return builder.toString();
+    }
 }
