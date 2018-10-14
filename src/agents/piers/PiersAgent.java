@@ -19,11 +19,12 @@ public class PiersAgent implements Agent {
         int player = StateUtils.getCurrentPlayer(s);
 		IRule policy = new RuleSequenceRule(
             new PlayProbablySafeCardRule(player, (float)1.0),
-            new OsawaDiscardRule(player),
+            IfRule.allowedToDiscardACard(new OsawaDiscardRule(player)),
             IfRule.atLeastNHintsLeft(
                 1,
                 new TellAnyoneAboutUsefulCardRule(
                     player,
+                    (float)0.0,
                     (float)1.0,
                     (float)1.0,
                     (float)1.0,
@@ -31,7 +32,8 @@ public class PiersAgent implements Agent {
                     (float)10.0
                 )
             ),
-            new DiscardRandomRule(player)
+            IfRule.allowedToDiscardACard(new DiscardRandomRule(player)),
+            new FallbackRule()
         );
 
         return policy.play(s);

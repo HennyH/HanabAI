@@ -69,6 +69,8 @@ public class Hanabi{
     }
     catch(IllegalActionException e){
       e.printStackTrace();
+      log.append(e.toString());
+      log.append(e.getStackTrace());
       return -1;
     }
   }

@@ -22,6 +22,21 @@ public class IfRule implements IRule {
         return null;
     }
 
+    public static IfRule allowedToDiscardACard(IRule consequence) {
+        return new IfRule(
+            new Func<State, Boolean>() {
+                @Override
+                public Boolean apply(State s) {
+                    /* You cannot discard a card when there are hint
+                     * tokens left.
+                     */
+                    return s.getHintTokens() < 8;
+                }
+            },
+            consequence
+        );
+    }
+
     public static IfRule atLeastNHintsLeft(int n, IRule consequence) {
         return new IfRule(
             new Func<State, Boolean>() {

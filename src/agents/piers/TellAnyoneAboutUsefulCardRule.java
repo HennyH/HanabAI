@@ -13,6 +13,7 @@ import hanabAI.State;
 public class TellAnyoneAboutUsefulCardRule implements IRule {
 
     private int _playerIndex;
+    private float _usefullnessThreshold;
     private float _weightingForPointingAtMoreCards;
     private float _weightingForValueOverColour;
     private float _weightingForColourOverValue;
@@ -21,6 +22,7 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
 
     public TellAnyoneAboutUsefulCardRule(
             int playerIndex,
+            float usefullnessThreshold,
             float weightingForPointingAtMoreCards,
             float weightingForValueOverColour,
             float weightingForColourOverValue,
@@ -28,6 +30,7 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
             float weightingForRevealingPlayableCard
     ) {
         this._playerIndex = playerIndex;
+        this._usefullnessThreshold = usefullnessThreshold;
         this._weightingForPointingAtMoreCards = weightingForPointingAtMoreCards;
         this._weightingForValueOverColour = weightingForValueOverColour;
         this._weightingForColourOverValue = weightingForColourOverValue;
@@ -40,44 +43,6 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
             @Override
             public Boolean apply(CardHint hint) {
                 return hint.maybeGetActualColour().hasValue() && hint.maybeGetActualValue().hasValue();
-            }
-        };
-    }
-
-    private static Func<CardHint, Boolean> getCardOfFullyResolvedHintUnplayableFilter(
-            State s,
-            int playerIndex
-    ) {
-        return new Func<CardHint, Boolean>() {
-            @Override
-            public Boolean apply(CardHint hint) {
-                if (s.getObserver() == playerIndex) {
-                    throw new IllegalArgumentException(
-                        "The fully resolved hint filter cannot be used " +
-                        "by the observer of the state."
-                    );
-                }
-
-                Card[] hand = s.getHand(playerIndex);
-                Card hintedCard = hand[hint.getCardIndex()];
-                if (hintedCard == null) {
-                    /* This should never occur, but if it does, then make a
-                     * note of it, but mark the card as unplayable.
-                     */
-                    System.err.println("Unreachable code hit.");
-                    return false;
-                }
-
-                /* If the hinted card were fully known, but could not be
-                 * safely played filter it out.
-                 */
-                ArrayList<Card> targetCards = StateUtils.getPlayableFireworksCards(s);
-                if (!CardUtils.doesDeckContainCard(targetCards, hintedCard)) {
-                    return false;
-                }
-
-                /* keep the card */
-                return true;
             }
         };
     }
@@ -201,7 +166,7 @@ public class TellAnyoneAboutUsefulCardRule implements IRule {
             }
         }
 
-        if (bestHintCalculation != null) {
+        if (bestHintCalculation != null && bestHintCalculation.getUtility() >= this._usefullnessThreshold) {
             System.out.println("\t GIVING HINT TO PLAYER " + ((Integer)bestHintCalculation.getPlayerRecievingHintIndex()).toString());
             System.out.println("\t colour = " + bestHintCalculation.getHintedColour().toString() + "\t value = " + bestHintCalculation.getHintedValue().toString());
             System.out.println("\t " + (Arrays.toString(bestHintCalculation.getCardPointedAtArray())));
