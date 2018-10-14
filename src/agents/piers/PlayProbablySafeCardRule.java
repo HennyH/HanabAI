@@ -72,7 +72,7 @@ public class PlayProbablySafeCardRule implements IRule {
             }
         }
 
-        if (bestCardSafeProbability >= this._confidenceThreshold) {
+        if (bestCardHint != null && bestCardSafeProbability >= this._confidenceThreshold) {
             try {
                 return new Action(
                     this._playerIndex,

@@ -22,6 +22,14 @@ public class Linq {
         return result;
     }
 
+    public static <T> ArrayList<T> repeat(T value, int times) {
+        ArrayList<T> result = new ArrayList<T>();
+        for (int i = 1; i <= times; i++) {
+            result.add(value);
+        }
+        return result;
+    }
+
     public static <T> int count(ArrayList<T> source, Func<T, Boolean> predicate) {
         int seen = 0;
         for (T obj : source) {

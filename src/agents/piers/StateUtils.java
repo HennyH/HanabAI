@@ -273,7 +273,10 @@ public class StateUtils {
              * in the siutation where we didn't draw a card... This simplifies
              * logic elsewhere because we can always assume #hand = #cardHints.
              */
-            if (StateUtils.isDiscardAction(a) || StateUtils.isPlayFireworksAction(a)) {
+            if (
+                    a.getPlayer() == playerIndex &&
+                    (StateUtils.isDiscardAction(a) || StateUtils.isPlayFireworksAction(a))
+            ) {
                 int hintIndex = a.getCard();
                 hints[hintIndex] = new CardHint(playerIndex, hintIndex);
             } else if (StateUtils.isHintActionForPlayer(a, playerIndex)) {
@@ -321,7 +324,7 @@ public class StateUtils {
         return hints;
     }
 
-    public static CardHint[] getHintsForPlayer(State s, int playerIndex) {
+    public static CardHint[] getHintsForPlayer(State s, int playerIndex, StringBuilder log) {
         Action[] chronologicalActions = StateUtils.getChronologicalActions(s);
         int handSize = StateUtils.getHandSize(s);
         CardHint[] runningHints = new CardHint[handSize];
@@ -335,6 +338,22 @@ public class StateUtils {
         }
 
         for (Action a : chronologicalActions) {
+            if (log != null) {
+                log.append(
+                    String.format(
+                        "\t\t\t %s --(%s)--> %s %n",
+                        Arrays.toString(runningHints),
+                        a.toString(),
+                        Arrays.toString(
+                            StateUtils.applyActionToPlayerCardHints(
+                                runningHints,
+                                playerIndex,
+                                a
+                            )
+                        )
+                    )
+                );
+            }
             runningHints = StateUtils.applyActionToPlayerCardHints(
                 runningHints,
                 playerIndex,
@@ -343,6 +362,10 @@ public class StateUtils {
         }
 
         return runningHints;
+    }
+
+    public static CardHint[] getHintsForPlayer(State s, int playerIndex) {
+        return getHintsForPlayer(s, playerIndex, null);
     }
 
     public static ArrayList<Card> getOtherPlayersCards(State s, int playerIndex) {
@@ -501,6 +524,7 @@ public class StateUtils {
                         Arrays.toString(StateUtils.getHintsForPlayer(state, player))
                     )
                 );
+                StateUtils.getHintsForPlayer(state, player, builder);
             }
             builder.append(
                 String.format(
