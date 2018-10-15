@@ -19,7 +19,8 @@ public class HintUtils {
                 float weightingForColourOverValue,
                 float weightingForHigherValues,
                 float weightingForRevealingPlayableCard,
-                float weightingForRevealingAUselessCard
+                float weightingForRevealingAUselessCard,
+                float weightingForPointingAtLessDistantFuturePlayableCards
     ) {
         ArrayList<CardHint> ownViewOfHand = new ArrayList<CardHint>(
             Arrays.asList(StateUtils.getHintsForPlayer(s, playerRecievingHint))
@@ -86,7 +87,8 @@ public class HintUtils {
                 weightingForColourOverValue,
                 weightingForHigherValues,
                 weightingForRevealingPlayableCard,
-                weightingForRevealingAUselessCard
+                weightingForRevealingAUselessCard,
+                weightingForPointingAtLessDistantFuturePlayableCards
             );
             if (bestHintCalculation == null) {
                 bestHintCalculation = calculation;

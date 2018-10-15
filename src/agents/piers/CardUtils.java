@@ -268,7 +268,8 @@ public class CardUtils {
             float weightingForColourOverValue,
             float weightingForHigherValues,
             float weightingForRevealingPlayableCards,
-            float weightingForRevealingAUselessCard
+            float weightingForRevealingAUselessCard,
+            float weightingForPointingAtLessDistantFuturePlayableCards
     ) {
         Maybe<Colour> colourHint = hint.getLeft();
         Maybe<Integer> valueHint = hint.getRight();
@@ -403,6 +404,61 @@ public class CardUtils {
                     new Identity<Integer>()
                 ).getValue()
             );
+        Maybe<Float> averageDistanceToPlayableValueOfPointedAtCards = Linq.avg(
+            /* After having filtered out all the null possible integers map them into plain integers. */
+            Linq.map(
+                /* Filter out all the null differences, the heuristic here is we don't care
+                 * about the proportion of the hand pointed at, rather only those
+                 * cards we pointed at that could be played in the future.
+                 */
+                Linq.filter(
+                    /* turn each pointed at card into a possible integer difference between its value
+                     * and the next playable firework's value of the same colour.
+                     */
+                    Linq.map(
+                        pointedAtCardIndexes,
+                        new Func<Integer, Maybe<Integer>>() {
+                            @Override
+                            public Maybe<Integer> apply(Integer cardIndex) {
+                                Card card = hand[cardIndex];
+                                Maybe<Card> firework = StateUtils.getTopFireworksCardForColour(
+                                    s,
+                                    card.getColour()
+                                );
+                                if (firework.hasValue()
+                                        && card.getValue() > firework.getValue().getValue()
+                                ) {
+                                    return new Maybe<Integer>(
+                                        card.getValue() - firework.getValue().getValue()
+                                    );
+                                }
+                                return new Maybe<Integer>(null);
+                            }
+                        }
+                    ),
+                    new Func<Maybe<Integer>, Boolean>() {
+                        @Override
+                        public Boolean apply(Maybe<Integer> positiveDifference) {
+                            if (!positiveDifference.hasValue()) {
+                                return false;
+                            }
+                            return true;
+                        }
+                    }
+                ),
+                new Func<Maybe<Integer>, Integer>() {
+                    @Override
+                    public Integer apply(Maybe<Integer> positiveDifference) {
+                        return positiveDifference.getValue();
+                    }
+                }
+            ),
+            new Identity<Integer>()
+        );
+        float paramAverageDistanceToPlayableValueOfPointedAtCards =
+            averageDistanceToPlayableValueOfPointedAtCards.hasValue()
+                ? (float)1.0 / averageDistanceToPlayableValueOfPointedAtCards.getValue()
+                : (float)0.0;
         float paramIsValueHint = valueHint.hasValue() ? (float)1.0 : (float)0.0;
         float paramIsColourHint = colourHint.hasValue() ? (float)1.0 : (float)0.0;
         float utility =
@@ -412,7 +468,8 @@ public class CardUtils {
                 (weightingForRevealingAUselessCard * paramPercentageOfCardsInHandThatWerePointedAtAndAreNowKownToBeUseless) +
                 (weightingForHigherValues * paramAverageValueOfPointedAtCards) +
                 (weightingForColourOverValue * paramIsColourHint) +
-                (weightingForValueOverColour * paramIsValueHint)
+                (weightingForValueOverColour * paramIsValueHint) +
+                (weightingForPointingAtLessDistantFuturePlayableCards * paramAverageDistanceToPlayableValueOfPointedAtCards)
             )
             /
             (
@@ -421,7 +478,8 @@ public class CardUtils {
                 weightingForRevealingAUselessCard +
                 weightingForHigherValues +
                 weightingForColourOverValue +
-                weightingForValueOverColour
+                weightingForValueOverColour +
+                weightingForPointingAtLessDistantFuturePlayableCards
             );
 
         // System.out.println("\t\tPOINTED AT " + Arrays.toString(pointedAtCardIndexes.toArray(new Integer[0])));

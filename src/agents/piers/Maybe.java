@@ -8,6 +8,13 @@ public class Maybe<T> {
         this._value = value;
     }
 
+    public T getValueOrDefault(T defaultValue) {
+        if (this.hasValue()) {
+            return this.getValue();
+        }
+        return defaultValue;
+    }
+
     public T getValue() {
         if (this._value == null) {
             throw new IllegalAccessError("Attempted to get the value of an empty Maybe<T>");

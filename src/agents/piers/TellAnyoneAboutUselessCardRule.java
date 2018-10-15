@@ -19,6 +19,7 @@ public class TellAnyoneAboutUselessCardRule implements IRule {
     private float _weightingForHigherValues;
     private float _weightingForRevealingPlayableCard;
     private float _weightingForRevealingAUselessCard;
+    private float _weightingForPointingAtLessDistantFuturePlayableCards;
 
     public TellAnyoneAboutUselessCardRule(
             int playerIndex,
@@ -27,7 +28,8 @@ public class TellAnyoneAboutUselessCardRule implements IRule {
             float weightingForColourOverValue,
             float weightingForHigherValues,
             float weightingForRevealingPlayableCard,
-            float weightingForRevealingAUselessCard
+            float weightingForRevealingAUselessCard,
+            float weightingForPointingAtLessDistantFuturePlayableCards
     ) {
         this._playerIndex = playerIndex;
         this._weightingForPointingAtMoreCards = weightingForPointingAtMoreCards;
@@ -36,6 +38,7 @@ public class TellAnyoneAboutUselessCardRule implements IRule {
         this._weightingForHigherValues = weightingForHigherValues;
         this._weightingForRevealingPlayableCard = weightingForRevealingPlayableCard;
         this._weightingForRevealingAUselessCard = weightingForRevealingAUselessCard;
+        this._weightingForPointingAtLessDistantFuturePlayableCards = weightingForPointingAtLessDistantFuturePlayableCards;
     }
 
     @Override
@@ -66,7 +69,8 @@ public class TellAnyoneAboutUselessCardRule implements IRule {
                 this._weightingForColourOverValue,
                 this._weightingForHigherValues,
                 this._weightingForRevealingPlayableCard,
-                this._weightingForRevealingAUselessCard
+                this._weightingForRevealingAUselessCard,
+                this._weightingForPointingAtLessDistantFuturePlayableCards
             );
 
             if (!bestHintForPlayer.hasValue()) {
