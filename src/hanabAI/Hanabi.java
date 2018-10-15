@@ -6,6 +6,7 @@ import java.util.Arrays;
 import agents.BasicAgent;
 import agents.piers.PiersAgent;
 import agents.piers.StateUtils;
+import agents.piers.evolution.EvolutionRunner;
 
 /**
  * A class for running a single game of Hanabi.
@@ -89,21 +90,28 @@ public class Hanabi{
    * */
   public static void main(String[] args){
     // System.err.println(Arrays.toString(args));
-    Agent[] agents = {new PiersAgent(), new PiersAgent(), new PiersAgent(), new PiersAgent()};
-    if (args.length > 1) {
-      int numberOfPlayers = Integer.parseInt(args[1]);
-      ArrayList<Agent> varAgents = new ArrayList<Agent>();
-      for (int i = 1; i <= numberOfPlayers; i++) {
-        varAgents.add(new PiersAgent());
-      }
-      agents = varAgents.toArray(new Agent[0]);
-    }
-    Hanabi game= new Hanabi(agents);
-    StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
-    int result = game.play(log);
-    log.append("The final score is "+result+".\n");
-    log.append(critique(result));
-    System.out.print(log);
+    // Agent[] agents = {new PiersAgent(), new PiersAgent(), new PiersAgent(), new PiersAgent()};
+    // if (args.length > 1) {
+    //   int numberOfPlayers = Integer.parseInt(args[1]);
+    //   ArrayList<Agent> varAgents = new ArrayList<Agent>();
+    //   for (int i = 1; i <= numberOfPlayers; i++) {
+    //     varAgents.add(new PiersAgent());
+    //   }
+    //   agents = varAgents.toArray(new Agent[0]);
+    // }
+    // Hanabi game= new Hanabi(agents);
+    // StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
+    // int result = game.play(log);
+    // log.append("The final score is "+result+".\n");
+    // log.append(critique(result));
+    // System.out.print(log);
+    EvolutionRunner.run(
+      100,
+      20,
+      100,
+      4,
+      5
+    );
   }
 }
 

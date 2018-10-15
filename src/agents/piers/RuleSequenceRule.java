@@ -1,5 +1,7 @@
 package agents.piers;
 
+import java.util.ArrayList;
+
 import hanabAI.Action;
 import hanabAI.State;
 
@@ -9,6 +11,10 @@ public class RuleSequenceRule implements IRule {
 
     public RuleSequenceRule(IRule... rules) {
         this._ruleSequence = rules;
+    }
+
+    public RuleSequenceRule(ArrayList<IRule> rules) {
+        this._ruleSequence = rules.toArray(new IRule[0]);
     }
 
     @Override

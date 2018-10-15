@@ -14,6 +14,15 @@ public class Linq {
         return result;
     }
 
+    public static <T1, T2, R> ArrayList<R> zipShortestMap(ArrayList<T1> source, ArrayList<T2> other, Func<Pair<T1, T2>, R> selector) {
+        ArrayList<R> result = new ArrayList<R>();
+        int smallestLen = Math.min(source.size(), other.size());
+        for (int i = 0; i < smallestLen; i++) {
+            result.add(selector.apply(new Pair<T1, T2>(source.get(i), other.get(i))));
+        }
+        return result;
+    }
+
     public static <T, R> ArrayList<R> map(ArrayList<T> source, Func<T, R> selector) {
         ArrayList<R> result = new ArrayList<R>();
         for (T obj : source) {

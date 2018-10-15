@@ -84,6 +84,18 @@ public class IfRule implements IRule {
             consequence
         );
     }
+
+    public static IfRule atLeastXHintsAndYLivesLeft(int hints, int lives, IRule consequence) {
+        return new IfRule(
+            new Func<State, Boolean>() {
+                @Override
+                public Boolean apply(State s) {
+                    return s.getFuseTokens() >= lives && s.getHintTokens() >= hints;
+                }
+            },
+            consequence
+        );
+    }
 }
 
 

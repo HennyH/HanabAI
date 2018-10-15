@@ -160,8 +160,6 @@ public class State implements Cloneable{
           Card c = hands[a.getHintReceiver()][i];
           hint2[i] = (c==null?-1:c.getValue())==a.getValue();
         }
-        System.out.println(Arrays.toString(hint2));
-        System.out.println(Arrays.toString(a.getHintedCards()));
         return Arrays.equals(hint2, a.getHintedCards());
       default: return false;
     }
