@@ -53,18 +53,23 @@ public class EvolutionRunner {
             int generation,
             Float topScore,
             HashMap<Float, ArrayList<Genome>> scoreToGenomes,
-            ArrayList<Genome> newChildren,
-            ArrayList<Genome> population,
-            ArrayList<Float> populationAverageScores
+            ArrayList<Genome> generationPopulation,
+            ArrayList<Float> generationAverageScores,
+            Float originalPopulationAverageScoresMean,
+            Float originalPopulationAverageScoresStdev
     ) {
+        float generationScoresAverage = Linq.avgF(generationAverageScores, new Identity<Float>()).getValue();
+        float generationScoresStdev = MathUtils.stdevP(generationAverageScores);
         System.out.println(
             String.format(
-                "Generation %-7d: %-7s %-10s %-8s %-8s",
+                "Generation %-7d: %-7s %-10s %-8s %-8s %-10s %-10s",
                 generation,
-                String.format("n(%d)", population.size()),
+                String.format("n(%d)", generationPopulation.size()),
                 String.format("max(%5.2f)", topScore),
-                String.format("μ(%5.2f)", Linq.avgF(populationAverageScores, new Identity<Float>()).getValue()),
-                String.format("σ(%5.2f)", MathUtils.stdevP(populationAverageScores))
+                String.format("μ(%5.2f)", generationScoresAverage),
+                String.format("σ(%5.2f)", generationScoresStdev),
+                String.format("▵μ(%6.2f)", generationScoresAverage - originalPopulationAverageScoresMean),
+                String.format("▵σ(%6.2f)", generationScoresStdev - originalPopulationAverageScoresStdev)
             )
         );
     }
@@ -81,6 +86,8 @@ public class EvolutionRunner {
                 int roundSamples
     ) {
         ArrayList<Genome> population = new ArrayList<Genome>();
+        Float originalPopulationAverageScoresMean = null;
+        Float originalPopulationAverageScoresStdev = null;
 
         for (int generation = 1; generation <= generations; generation++) {
 
@@ -192,6 +199,28 @@ public class EvolutionRunner {
                 orderedSurvivingGenomes.add(child);
             }
 
+            /* Reporting: Display progress information */
+            if (originalPopulationAverageScoresMean == null
+                    && originalPopulationAverageScoresStdev == null
+            ) {
+                originalPopulationAverageScoresMean = Linq.avgF(populationAverageScores, new Identity<Float>()).getValue();
+                originalPopulationAverageScoresStdev = MathUtils.stdevP(populationAverageScores);
+            }
+
+            logDetailedGenerationSummary(log, generation, scores[0], scoreToGenomes, newChildren, population, populationAverageScores);
+            printShortGenerationSummary(
+                log,
+                generation,
+                scores[0],
+                scoreToGenomes,
+                population,
+                populationAverageScores,
+                originalPopulationAverageScoresMean,
+                originalPopulationAverageScoresStdev
+            );
+            log.flush();
+
+            /* The surviving genomes and their children become the new population */
             population = orderedSurvivingGenomes;
 
             /* Culling: If the population size goes over the maximum perform a cull */
@@ -202,10 +231,6 @@ public class EvolutionRunner {
                     population.remove(RandomUtils.choose(population));
                 }
             }
-
-            logDetailedGenerationSummary(log, generation, scores[0], scoreToGenomes, newChildren, population, populationAverageScores);
-            printShortGenerationSummary(log, generation, scores[0], scoreToGenomes, newChildren, population, populationAverageScores);
-            log.flush();
         }
 
         return population;
