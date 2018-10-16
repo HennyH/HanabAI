@@ -1,6 +1,7 @@
 package agents.piers.evolution;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import agents.piers.FallbackRule;
 import agents.piers.IRule;
@@ -91,15 +92,6 @@ public class Genome {
         return new Genome(mutatedDna);
     }
 
-    public static Genome spawn() {
-        ArrayList<GenomeRule> dna = new ArrayList<GenomeRule>();
-        int length = 5 + RandomUtils.integer(1, 4);
-        for (int i = 1; i <= length; i++) {
-            dna.add(GenomeRule.spawn());
-        }
-        return new Genome(dna);
-    }
-
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -117,11 +109,11 @@ public class Genome {
 
     public static Agent asAgent(Genome X, int playerIndex) {
         ArrayList<IRule> rules = new ArrayList<IRule>();
-        rules.add(new FallbackRule(playerIndex));
-        IRule policy = new RuleSequenceRule(rules);
         for (GenomeRule gene : X.dna) {
             rules.add(GenomeRule.asRule(gene, playerIndex));
         }
+        rules.add(new FallbackRule(playerIndex));
+        IRule policy = new RuleSequenceRule(rules);
         return new Agent() {
             @Override
             public String toString() {
@@ -133,5 +125,96 @@ public class Genome {
 				return policy.play(s);
 			}
         };
+    }
+
+    public static Genome spawn() {
+        ArrayList<GenomeRule> dna = new ArrayList<GenomeRule>();
+        ArrayList<Float> playSemiSafeWeights = new ArrayList<Float>(
+            Arrays.asList(
+                new Float[]
+                {
+                    (float)0.7,
+                    (float)0.1,
+                    (float)0.1,
+                    (float)0.1,
+                    (float)-0.3,
+                    (float)0.1,
+                    (float)0.5,
+                    (float)0.8
+                }
+            )
+        );
+        ArrayList<Float> weights = new ArrayList<Float>(
+            Arrays.asList(
+                new Float[]
+                {
+                    (float)0.0,
+                    (float)0.1,
+                    (float)0.1,
+                    (float)0.1,
+                    (float)-0.3,
+                    (float)0.1,
+                    (float)0.5,
+                    (float)0.8
+                }
+            )
+        );
+        dna.add(
+            new GenomeRule(
+                GenomeRuleType.PlaySafe,
+                2,
+                0,
+                weights
+            )
+        );
+        dna.add(
+            new GenomeRule(
+                GenomeRuleType.PlayProbablySafe,
+                2,
+                0,
+                playSemiSafeWeights
+            )
+        );
+        dna.add(
+            new GenomeRule(
+                GenomeRuleType.TellAnyonePlayable,
+                0,
+                0,
+                weights
+            )
+        );
+        dna.add(
+            new GenomeRule(
+                GenomeRuleType.OsawaDiscard,
+                0,
+                0,
+                weights
+            )
+        );
+        dna.add(
+            new GenomeRule(
+                GenomeRuleType.TellAnyoneUseless,
+                0,
+                0,
+                weights
+            )
+        );
+        dna.add(
+            new GenomeRule(
+                GenomeRuleType.TellAnyoneUseful,
+                0,
+                0,
+                weights
+            )
+        );
+        dna.add(
+            new GenomeRule(
+                GenomeRuleType.RandomDiscard,
+                0,
+                0,
+                weights
+            )
+        );
+        return new Genome(dna);
     }
 }

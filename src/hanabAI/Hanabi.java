@@ -1,5 +1,6 @@
 package hanabAI;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -105,13 +106,22 @@ public class Hanabi{
     // log.append("The final score is "+result+".\n");
     // log.append(critique(result));
     // System.out.print(log);
-    EvolutionRunner.run(
-      100,
-      20,
-      100,
-      4,
-      5
-    );
+    try {
+      PrintWriter log = new PrintWriter("evolution-log.txt", "UTF-8");
+      EvolutionRunner.run(
+        log,
+        100,
+        10,
+        500,
+        4,
+        5
+      );
+    } catch (Exception ex) {
+      System.out.print(ex);
+      System.out.print(ex.getMessage());
+      System.out.print(Arrays.toString(ex.getStackTrace()));
+    }
+
   }
 }
 

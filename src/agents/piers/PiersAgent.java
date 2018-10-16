@@ -44,7 +44,6 @@ public class PiersAgent implements Agent {
                 (float)2.0,
                 (float)1.5
             ),
-            new DiscardRandomRule(player),
             new TellAnyoneAboutUsefulCardRule(
                 player,
                 (float)0.0,
@@ -56,6 +55,7 @@ public class PiersAgent implements Agent {
                 (float)2.0,
                 (float)1.5
             ),
+            new DiscardRandomRule(player),
             new FallbackRule(player)
         );
 

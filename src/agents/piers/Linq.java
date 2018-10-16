@@ -101,6 +101,16 @@ public class Linq {
             : new Maybe<Float>(null);
     }
 
+    public static <T> Maybe<Float> avgF(ArrayList<T> source, Func<T, Float> selector) {
+        Float total = (float)0.0;
+        for (T obj : source) {
+            total += selector.apply(obj);
+        }
+        return source.size() > 0
+            ? new Maybe<Float>((float)total / (float)source.size())
+            : new Maybe<Float>(null);
+    }
+
     public static <T> ArrayList<T> removeInstanceWise(ArrayList<T> source, ArrayList<T> other) {
         ArrayList<T> result = new ArrayList<T>();
         @SuppressWarnings("unchecked")

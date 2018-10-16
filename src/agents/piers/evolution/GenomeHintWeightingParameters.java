@@ -23,6 +23,7 @@ public class GenomeHintWeightingParameters {
         float weightingForRevealingAUselessCard,
         float weightingForPointingAtLessDistantFuturePlayableCards
     ) {
+        this.utilityThreshold = utilityThreshold;
         this.weightingForPointingAtMoreCards = weightingForPointingAtMoreCards;
         this.weightingForValueOverColour = weightingForValueOverColour;
         this.weightingForColourOverValue = weightingForColourOverValue;

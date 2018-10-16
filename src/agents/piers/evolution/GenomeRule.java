@@ -1,10 +1,12 @@
 package agents.piers.evolution;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import agents.piers.DiscardRandomRule;
 import agents.piers.Func;
 import agents.piers.IRule;
+import agents.piers.Identity;
 import agents.piers.IfRule;
 import agents.piers.Linq;
 import agents.piers.OsawaDiscardRule;
@@ -22,7 +24,7 @@ public class GenomeRule {
     public int hintsRemainingParameter;
     public ArrayList<Float> hintWeightingParamters;
 
-    private GenomeRule(
+    public GenomeRule(
             GenomeRuleType type,
             int livesRemainingParameter,
             int hintsRemainingParameter,
@@ -107,13 +109,17 @@ public class GenomeRule {
                         @Override
                         public Float apply(Float weight) {
                             float mutation = RandomUtils.choose(-1, 1) * (float)0.02;
-                            return weight + mutation;
+                            return clamp(weight + mutation, (float)-1.0, (float)1);
                         }
                     }
                 )
             );
         }
         return X;
+    }
+
+    public static float clamp(float val, float min, float max) {
+        return Math.max(min, Math.min(max, val));
     }
 
     public static GenomeRule spawn() {
@@ -182,5 +188,30 @@ public class GenomeRule {
             X.livesRemainingParameter,
             consequence
         );
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        GenomeHintWeightingParameters weights = GenomeHintWeightingParameters.asParameterSet(
+            this.hintWeightingParamters
+        );
+        builder.append(this.ruleType.toString());
+        if (this.ruleType == GenomeRuleType.PlayProbablySafe) {
+            builder.append("(");
+            builder.append(weights.utilityThreshold);
+            builder.append(")");
+        } else if (this.ruleType == GenomeRuleType.TellAnyonePlayable
+                || this.ruleType == GenomeRuleType.TellAnyoneUseless
+        ) {
+            builder.append("(");
+            builder.append(Arrays.toString(this.hintWeightingParamters.toArray()));
+            builder.append(")");
+        } else if (this.ruleType == GenomeRuleType.TellAnyoneUseful) {
+            builder.append("(");
+            builder.append(Arrays.toString(this.hintWeightingParamters.toArray()));
+            builder.append(")");
+        }
+        return builder.toString();
     }
 }

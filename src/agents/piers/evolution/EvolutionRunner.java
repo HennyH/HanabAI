@@ -1,5 +1,6 @@
 package agents.piers.evolution;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,27 +11,34 @@ import hanabAI.Hanabi;
 
 public class EvolutionRunner {
 
-    public static void displayGenerationSummary(
+    public static void logGenerationSummary(
+            PrintWriter log,
             int generation,
             int topScore,
-            HashMap<Integer, ArrayList<Genome>> scoreToGenomes
+            HashMap<Integer, ArrayList<Genome>> scoreToGenomes,
+            ArrayList<Genome> newChildren
     ) {
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("Generation %d, Top Score %d: %n: %n", generation, topScore));
-        builder.append("-----------------%n");
+        builder.append(String.format("Generation %d, Top Score %d: %n", generation, topScore));
+        builder.append("-----------------\n");
         for (Genome genome : scoreToGenomes.get(topScore)) {
-            builder.append("\t " + genome.toString());
+            builder.append("\t " + genome.toString() + "\n");
         }
-        System.out.println(builder.toString());
+        builder.append("\n\tChildren:\n\t--------\n");
+        for (Genome genome : newChildren) {
+            builder.append("\t>" + genome.toString() + "\n");
+        }
+        log.println(builder.toString());
     }
 
-    public static ArrayList<Genome> run(int populationSize, int cullSize, int generations, int numberOfPlayers, int roundSamples) {
+    public static ArrayList<Genome> run(PrintWriter log, int populationSize, int cullSize, int generations, int numberOfPlayers, int roundSamples) {
         ArrayList<Genome> population = new ArrayList<Genome>();
         for (int i = 1; i <= populationSize; i++) {
             population.add(Genome.spawn());
         }
 
         for (int generation = 1; generation <= generations; generation++) {
+            System.err.println(String.format("Generation %d", generation));
             /* Run the simulations and rank the agents */
             HashMap<Integer, ArrayList<Genome>> scoreToGenomes = new HashMap<>();
             HashMap<Genome, Integer> genomeToScore = new HashMap<>();
@@ -78,11 +86,13 @@ public class EvolutionRunner {
                 Genome X = parents.get(0);
                 Genome Y = parents.get(1);
                 newChildren.add(
-                    Genome.crossover(
-                        X,
-                        genomeToScore.get(X),
-                        Y,
-                        genomeToScore.get(Y)
+                    Genome.mutate(
+                        Genome.crossover(
+                            X,
+                            genomeToScore.get(X),
+                            Y,
+                            genomeToScore.get(Y)
+                        )
                     )
                 );
             }
@@ -92,7 +102,8 @@ public class EvolutionRunner {
                 survivingAgents.add(child);
             }
 
-            displayGenerationSummary(generation, scores[0], scoreToGenomes);
+            logGenerationSummary(log, generation, scores[0], scoreToGenomes, newChildren);
+            log.flush();
             population = survivingAgents;
         }
 

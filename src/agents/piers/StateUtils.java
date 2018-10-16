@@ -338,22 +338,6 @@ public class StateUtils {
         }
 
         for (Action a : chronologicalActions) {
-            if (log != null) {
-                log.append(
-                    String.format(
-                        "\t\t\t %s --(%s)--> %s %n",
-                        Arrays.toString(runningHints),
-                        a.toString(),
-                        Arrays.toString(
-                            StateUtils.applyActionToPlayerCardHints(
-                                runningHints,
-                                playerIndex,
-                                a
-                            )
-                        )
-                    )
-                );
-            }
             runningHints = StateUtils.applyActionToPlayerCardHints(
                 runningHints,
                 playerIndex,
