@@ -48,7 +48,7 @@ public class GenomeRule {
         return RandomUtils.integer(0, 8);
     }
 
-    public static GenomeRule crossover(GenomeRule X, float xFitness, GenomeRule Y, int yFitness) {
+    public static GenomeRule crossover(GenomeRule X, float xFitness, GenomeRule Y, float yFitness) {
         if (X.ruleType == Y.ruleType) {
             return new GenomeRule(
                 X.ruleType,
@@ -79,37 +79,43 @@ public class GenomeRule {
     }
 
     public static GenomeRule mutate(GenomeRule X) {
-        /* Every 2000 lives suffer a huge mutation that changes the rule type . */
-        if (RandomUtils.chance(0.005)) {
-            return new GenomeRule(
-                RandomUtils.choose(GenomeRuleType.values()),
-                GenomeRule.getRandomLivesRemainingParameter(),
-                GenomeRule.getRandomHintsRemainingParameter(),
-                X.hintWeightingParamters
-            );
-        }
+        // /* Every 2000 lives suffer a huge mutation that changes the rule type . */
+        // if (RandomUtils.chance(0.005)) {
+        //     return new GenomeRule(
+        //         RandomUtils.choose(GenomeRuleType.values()),
+        //         GenomeRule.getRandomLivesRemainingParameter(),
+        //         GenomeRule.getRandomHintsRemainingParameter(),
+        //         X.hintWeightingParamters
+        //     );
+        // }
         /* Every 100 lives suffer damage to the hint and lives counters */
-        if (RandomUtils.chance(0.01)) {
-            return new GenomeRule(
-                X.ruleType,
-                GenomeRule.getRandomLivesRemainingParameter(),
-                GenomeRule.getRandomHintsRemainingParameter(),
-                X.hintWeightingParamters
-            );
-        }
+        // if (RandomUtils.chance(0.01)) {
+        //     return new GenomeRule(
+        //         X.ruleType,
+        //         GenomeRule.getRandomLivesRemainingParameter(),
+        //         GenomeRule.getRandomHintsRemainingParameter(),
+        //         X.hintWeightingParamters
+        //     );
+        // }
         /* Every 10 lives have our hint weightings modified */
         if (RandomUtils.chance(0.1)) {
             return new GenomeRule(
                 X.ruleType,
                 X.livesRemainingParameter,
                 X.hintsRemainingParameter,
-                Linq.map(
+                Linq.mapi(
                     X.hintWeightingParamters,
-                    new Func<Float, Float>() {
+                    new Func<Pair<Float, Integer>, Float>() {
                         @Override
-                        public Float apply(Float weight) {
-                            float mutation = RandomUtils.choose(-1, 1) * (float)0.02;
-                            return clamp(weight + mutation, (float)-1.0, (float)1);
+                        public Float apply(Pair<Float, Integer> weight) {
+                            /* A confidence threshold should never be negative */
+                            if (weight.getRight() == 0) {
+                                float mutation = RandomUtils.choose(-1, 1, 1) * (float)0.0001;
+                                return clamp(weight.getLeft() + mutation, (float)0.0, (float)1.0);
+                            } else {
+                                float mutation = RandomUtils.choose(-1, 1) * (float)0.002;
+                                return clamp(weight.getLeft() + mutation, (float)-1.0, (float)1);
+                            }
                         }
                     }
                 )
@@ -122,7 +128,7 @@ public class GenomeRule {
         return Math.max(min, Math.min(max, val));
     }
 
-    public static GenomeRule spawn() {
+    public static GenomeRule spawnRandom() {
         return new GenomeRule(
             RandomUtils.choose(GenomeRuleType.values()),
             GenomeRule.getRandomLivesRemainingParameter(),

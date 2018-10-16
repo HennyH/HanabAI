@@ -110,8 +110,9 @@ public class Hanabi{
       PrintWriter log = new PrintWriter("evolution-log.txt", "UTF-8");
       EvolutionRunner.run(
         log,
+        5,
         100,
-        10,
+        (float)0.01,
         500,
         4,
         5

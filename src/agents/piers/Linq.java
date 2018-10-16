@@ -31,6 +31,14 @@ public class Linq {
         return result;
     }
 
+    public static <T, R> ArrayList<R> mapi(ArrayList<T> source, Func<Pair<T, Integer>, R> selector) {
+        ArrayList<R> result = new ArrayList<R>();
+        for (int i = 0; i < source.size(); i++) {
+            result.add(selector.apply(new Pair<>(source.get(i), i)));
+        }
+        return result;
+    }
+
     public static <T> ArrayList<T> repeat(T value, int times) {
         ArrayList<T> result = new ArrayList<T>();
         for (int i = 1; i <= times; i++) {

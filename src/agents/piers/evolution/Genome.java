@@ -19,7 +19,7 @@ public class Genome {
         this.dna = dna;
     }
 
-    public static Genome crossover(Genome X, float xFitness, Genome Y, int yFitness) {
+    public static Genome crossover(Genome X, float xFitness, Genome Y, float yFitness) {
         ArrayList<GenomeRule> childDna = new ArrayList<GenomeRule>();
         Genome strongerGenome = xFitness >= yFitness ? X : Y;
         Genome weakerGenome = xFitness >= yFitness ? Y : X;
@@ -67,23 +67,23 @@ public class Genome {
         @SuppressWarnings("unchecked")
         ArrayList<GenomeRule> mutatedDna = (ArrayList<GenomeRule>)X.dna.clone();
 
-        /* Every 1000 lives drop a random segment of dna */
-        if (RandomUtils.chance(1.0 / 1000.0) && mutatedDna.size() > 1) {
-            mutatedDna.remove(RandomUtils.choose(mutatedDna));
-        }
-        /* Every 1000 lives add a random segment of dna */
-        if (RandomUtils.chance(1.0 / 1000.0) && mutatedDna.size() <= 20) {
-            mutatedDna.add(GenomeRule.spawn());
-        }
+        // /* Every 1000 lives drop a random segment of dna */
+        // if (RandomUtils.chance(1.0 / 1000.0) && mutatedDna.size() > 1) {
+        //     mutatedDna.remove(RandomUtils.choose(mutatedDna));
+        // }
+        // /* Every 1000 lives add a random segment of dna */
+        // if (RandomUtils.chance(1.0 / 1000.0) && mutatedDna.size() <= 20) {
+        //     mutatedDna.add(GenomeRule.spawn());
+        // }
         /* Every 50 lives swap a segment of dna around */
-        if (RandomUtils.chance(0.02) && mutatedDna.size() > 3) {
-            GenomeRule a = RandomUtils.choose(mutatedDna);
-            GenomeRule b = RandomUtils.choose(mutatedDna);
-            int aIndex = mutatedDna.indexOf(a);
-            int bIndex = mutatedDna.indexOf(b);
-            mutatedDna.set(aIndex, b);
-            mutatedDna.set(bIndex, a);
-        }
+        // if (RandomUtils.chance(0.02) && mutatedDna.size() > 3) {
+        //     GenomeRule a = RandomUtils.choose(mutatedDna);
+        //     GenomeRule b = RandomUtils.choose(mutatedDna);
+        //     int aIndex = mutatedDna.indexOf(a);
+        //     int bIndex = mutatedDna.indexOf(b);
+        //     mutatedDna.set(aIndex, b);
+        //     mutatedDna.set(bIndex, a);
+        // }
 
         for (int i = 0; i < mutatedDna.size(); i++) {
             mutatedDna.set(i, GenomeRule.mutate(mutatedDna.get(i)));
@@ -215,6 +215,11 @@ public class Genome {
                 weights
             )
         );
-        return new Genome(dna);
+
+        Genome modelGenome = new Genome(dna);
+        for (int i = 1; i <= 30; i++) {
+            modelGenome = Genome.mutate(modelGenome);
+        }
+        return modelGenome;
     }
 }

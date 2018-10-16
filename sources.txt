@@ -13,6 +13,7 @@ C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\Ident
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\IfRule.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\IRule.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\Linq.java
+C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\MathUtils.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\Maybe.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\OsawaDiscardRule.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\Pair.java
