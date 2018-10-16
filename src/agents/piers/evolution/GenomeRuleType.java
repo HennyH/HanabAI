@@ -15,8 +15,8 @@ public enum GenomeRuleType {
             case PlaySafe: return "PS";
             case PlayProbablySafe: return "PPS";
             case TellAnyonePlayable: return "TAP";
-            case TellAnyoneUseful: return "TA+";
-            case TellAnyoneUseless: return "TA-";
+            case TellAnyoneUseful: return "TAU";
+            case TellAnyoneUseless: return "TAD";
             case OsawaDiscard: return "OD";
             case RandomDiscard: return "RD";
         }

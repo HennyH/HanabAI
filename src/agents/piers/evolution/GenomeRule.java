@@ -79,26 +79,26 @@ public class GenomeRule {
     }
 
     public static GenomeRule mutate(GenomeRule X) {
-        // /* Every 2000 lives suffer a huge mutation that changes the rule type . */
-        // if (RandomUtils.chance(0.005)) {
-        //     return new GenomeRule(
-        //         RandomUtils.choose(GenomeRuleType.values()),
-        //         GenomeRule.getRandomLivesRemainingParameter(),
-        //         GenomeRule.getRandomHintsRemainingParameter(),
-        //         X.hintWeightingParamters
-        //     );
-        // }
-        /* Every 100 lives suffer damage to the hint and lives counters */
-        // if (RandomUtils.chance(0.01)) {
-        //     return new GenomeRule(
-        //         X.ruleType,
-        //         GenomeRule.getRandomLivesRemainingParameter(),
-        //         GenomeRule.getRandomHintsRemainingParameter(),
-        //         X.hintWeightingParamters
-        //     );
-        // }
+        /* Every 10000 lives suffer a huge mutation that changes the rule type . */
+        if (RandomUtils.chance(1.0 / 10000.0)) {
+            return new GenomeRule(
+                RandomUtils.choose(GenomeRuleType.values()),
+                GenomeRule.getRandomLivesRemainingParameter(),
+                GenomeRule.getRandomHintsRemainingParameter(),
+                X.hintWeightingParamters
+            );
+        }
+        /* Every 5000 lives suffer damage to the hint and lives counters */
+        if (RandomUtils.chance(1.0 / 5000.0)) {
+            return new GenomeRule(
+                X.ruleType,
+                GenomeRule.getRandomLivesRemainingParameter(),
+                GenomeRule.getRandomHintsRemainingParameter(),
+                X.hintWeightingParamters
+            );
+        }
         /* Every 10 lives have our hint weightings modified */
-        if (RandomUtils.chance(0.1)) {
+        if (RandomUtils.chance(1.0 / 10.0)) {
             return new GenomeRule(
                 X.ruleType,
                 X.livesRemainingParameter,
@@ -133,7 +133,7 @@ public class GenomeRule {
             RandomUtils.choose(GenomeRuleType.values()),
             GenomeRule.getRandomLivesRemainingParameter(),
             GenomeRule.getRandomHintsRemainingParameter(),
-            RandomUtils.randomWeights(GenomeHintWeightingParameters.getParameterCount())
+            GenomeHintWeightingParameters.getRandomWeights()
         );
     }
 
@@ -196,26 +196,43 @@ public class GenomeRule {
         );
     }
 
-    @Override
-    public String toString() {
+    public static String formatGenomeRule(GenomeRule rule, boolean shortVersion) {
         StringBuilder builder = new StringBuilder();
         GenomeHintWeightingParameters weights = GenomeHintWeightingParameters.asParameterSet(
-            this.hintWeightingParamters
+            rule.hintWeightingParamters
         );
-        builder.append(this.ruleType.toString());
-        if (this.ruleType == GenomeRuleType.PlayProbablySafe) {
-            builder.append("(");
+        builder.append(rule.ruleType.toString());
+        builder.append("{");
+        builder.append(
+            String.format(
+                "L=%d, H=%d, W=(",
+                rule.livesRemainingParameter,
+                rule.hintsRemainingParameter
+            )
+        );
+        if (rule.ruleType == GenomeRuleType.PlayProbablySafe) {
             builder.append(weights.utilityThreshold);
-            builder.append(")");
-        } else if (this.ruleType == GenomeRuleType.TellAnyonePlayable
-                || this.ruleType == GenomeRuleType.TellAnyoneUseless
-                || this.ruleType == GenomeRuleType.TellAnyoneUseful
+        } else if (rule.ruleType == GenomeRuleType.TellAnyonePlayable
+                || rule.ruleType == GenomeRuleType.TellAnyoneUseless
+                || rule.ruleType == GenomeRuleType.TellAnyoneUseful
         ) {
-            builder.append("(");
-            String weightArrayStr = Arrays.toString(this.hintWeightingParamters.toArray());
-            builder.append(weightArrayStr.substring(1, weightArrayStr.length() - 1));
-            builder.append(")");
+            if (shortVersion) {
+                builder.append(Linq.avgF(rule.hintWeightingParamters));
+            } else {
+                String weightArrayStr = Arrays.toString(rule.hintWeightingParamters.toArray());
+                builder.append(weightArrayStr.substring(1, weightArrayStr.length() - 1));
+            }
         }
+        builder.append(")}");
         return builder.toString();
+    }
+
+    @Override
+    public String toString() {
+        return GenomeRule.formatGenomeRule(this, false);
+    }
+
+    public String toShortString() {
+        return GenomeRule.formatGenomeRule(this, true);
     }
 }

@@ -45,13 +45,7 @@ public class RandomUtils {
         return RandomUtils._rand.nextInt(upper + 1) + lower;
     }
 
-    public static ArrayList<Float> randomWeights(int number) {
-        ArrayList<Float> weights = new ArrayList<Float>();
-        for (int i = 1; i <= number; i++) {
-            weights.add(
-                RandomUtils.choose(-1, 1) * RandomUtils._rand.nextFloat()
-            );
-        }
-        return weights;
+    public static float weight() {
+        return RandomUtils._rand.nextFloat();
     }
 }

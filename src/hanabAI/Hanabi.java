@@ -114,13 +114,14 @@ public class Hanabi{
       Writer log = new OutputStreamWriter(fos, "UTF8");
       EvolutionRunner.run(
         log,
-        8,
-        50,
-        500,
+        10,
+        100,
+        200,
+        (float)0.8,
         (float)0.01,
         500,
         4,
-        10
+        20
       );
     } catch (Exception ex) {
       System.out.print(ex);

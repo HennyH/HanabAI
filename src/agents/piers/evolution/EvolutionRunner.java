@@ -44,7 +44,8 @@ public class EvolutionRunner {
                 generationIndividualScores,
                 generationAverageScores,
                 originalPopulationAverageScoreMean,
-                originalPopulationAverageScoreStdev
+                originalPopulationAverageScoreStdev,
+                averageScoreToGenomes
             )
         );
         builder.append("\n-----------------\n");
@@ -70,12 +71,15 @@ public class EvolutionRunner {
             ArrayList<Float> generationIndividualScores,
             ArrayList<Float> generationAverageScores,
             Float originalPopulationAverageScoreMean,
-            Float originalPopulationAverageScoreStdev
+            Float originalPopulationAverageScoreStdev,
+            HashMap<Float, ArrayList<Genome>> averageScoreToGenomes
     ) {
         float averageGenerationScoreAverage = Linq.avgF(generationAverageScores).getValue();
         float averageGenerationScoreStdev = MathUtils.stdevP(generationAverageScores);
+        float maximumAverageScore = Linq.max(generationAverageScores).getValue();
+        float minimumAverageScore = Linq.min(generationAverageScores).getValue();
         return String.format(
-            "Generation %-7d: %-7s %-12s %-12s %-10s %-10s %-12s %-12s %-10s %-10s %-12s %-12s",
+            "Generation %-7d: %-7s %-12s %-12s %-10s %-10s %-12s %-12s %-10s %-10s %-12s %-12s%n%n\tStrongest: %s%n\tWeakest:   %s%n",
             generation,
             String.format("n(%d)", generationPopulation.size()),
             /* Statistics around individual game scores across population */
@@ -84,13 +88,15 @@ public class EvolutionRunner {
             String.format("U_s(%5.2f)", Linq.avgF(generationIndividualScores).getValue()),
             String.format("S_s(%5.2f)", MathUtils.stdevP(generationIndividualScores)),
             /* Statistics around average game scores across population */
-            String.format("min_u(%5.2f)", Linq.min(generationAverageScores).getValue()),
-            String.format("max_u(%5.2f)", Linq.max(generationAverageScores).getValue()),
+            String.format("min_u(%5.2f)", minimumAverageScore),
+            String.format("max_u(%5.2f)", maximumAverageScore),
             String.format("U_u(%5.2f)", averageGenerationScoreAverage),
             String.format("S_u(%5.2f)", averageGenerationScoreStdev),
             /* Difference to original population */
             String.format("DU_u(%6.2f)", averageGenerationScoreAverage - originalPopulationAverageScoreMean),
-            String.format("DS_u(%6.2f)", averageGenerationScoreStdev - originalPopulationAverageScoreStdev)
+            String.format("DS_u(%6.2f)", averageGenerationScoreStdev - originalPopulationAverageScoreStdev),
+            Linq.first(averageScoreToGenomes.get(maximumAverageScore)).getValue().formatShortDna(),
+            Linq.first(averageScoreToGenomes.get(minimumAverageScore)).getValue().formatShortDna()
         );
     }
 
@@ -101,6 +107,7 @@ public class EvolutionRunner {
                 int threadCount,
                 int initialPopulationSize,
                 int maximumPopulationSize,
+                float spawnModelChance,
                 float extinctionRate,
                 int generations,
                 int numberOfPlayers,
@@ -115,7 +122,11 @@ public class EvolutionRunner {
 
             /* Never let the population drop below the inital amount */
             while (population.size() < initialPopulationSize) {
-                population.add(Genome.spawn());
+                if (RandomUtils.chance(spawnModelChance)) {
+                    population.add(Genome.spawnModel());
+                } else {
+                    population.add(Genome.spawnRandom());
+                }
             }
 
             /* Evaluate: Measure each agents performance and keep a record. */
@@ -273,7 +284,8 @@ public class EvolutionRunner {
                     populationIndividualScores,
                     populationAverageScores,
                     originalPopulationAverageScoresMean,
-                    originalPopulationAverageScoresStdev
+                    originalPopulationAverageScoresStdev,
+                    averageScoreToGenomes
                 )
             );
 

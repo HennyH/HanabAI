@@ -3,6 +3,8 @@ package agents.piers.evolution;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import agents.piers.RandomUtils;
+
 public class GenomeHintWeightingParameters {
     public float utilityThreshold;
     public float weightingForPointingAtMoreCards;
@@ -51,5 +53,18 @@ public class GenomeHintWeightingParameters {
             weights.get(6),
             weights.get(7)
         );
+    }
+
+    public static ArrayList<Float> getRandomWeights() {
+        ArrayList<Float> weights = new ArrayList<Float>();
+        /* Add a 0-1 weight for confidence. */
+        weights.add(RandomUtils.weight());
+        for (int i = 1; i <= getParameterCount() - 1; i++) {
+            weights.add(
+                /* Make negative weights rarer */
+                RandomUtils.choose(-1, 1, 1, 1) * RandomUtils.weight()
+            );
+        }
+        return weights;
     }
 }

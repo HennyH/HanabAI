@@ -70,23 +70,23 @@ public class Genome {
         @SuppressWarnings("unchecked")
         ArrayList<GenomeRule> mutatedDna = (ArrayList<GenomeRule>)X.dna.clone();
 
-        // /* Every 1000 lives drop a random segment of dna */
-        // if (RandomUtils.chance(1.0 / 1000.0) && mutatedDna.size() > 1) {
-        //     mutatedDna.remove(RandomUtils.choose(mutatedDna));
-        // }
-        // /* Every 1000 lives add a random segment of dna */
-        // if (RandomUtils.chance(1.0 / 1000.0) && mutatedDna.size() <= 20) {
-        //     mutatedDna.add(GenomeRule.spawn());
-        // }
-        /* Every 50 lives swap a segment of dna around */
-        // if (RandomUtils.chance(0.02) && mutatedDna.size() > 3) {
-        //     GenomeRule a = RandomUtils.choose(mutatedDna);
-        //     GenomeRule b = RandomUtils.choose(mutatedDna);
-        //     int aIndex = mutatedDna.indexOf(a);
-        //     int bIndex = mutatedDna.indexOf(b);
-        //     mutatedDna.set(aIndex, b);
-        //     mutatedDna.set(bIndex, a);
-        // }
+        /* Every 10000 lives drop a random segment of dna */
+        if (RandomUtils.chance(1.0 / 10000.0) && mutatedDna.size() > 1) {
+            mutatedDna.remove(RandomUtils.choose(mutatedDna));
+        }
+        /* Every 10000 lives add a random segment of dna */
+        if (RandomUtils.chance(1.0 / 10000.0) && mutatedDna.size() <= 20) {
+            mutatedDna.add(GenomeRule.spawnRandom());
+        }
+        /* Every 5000 lives swap a segment of dna around */
+        if (RandomUtils.chance(1.0 / 5000.0) && mutatedDna.size() > 3) {
+            GenomeRule a = RandomUtils.choose(mutatedDna);
+            GenomeRule b = RandomUtils.choose(mutatedDna);
+            int aIndex = mutatedDna.indexOf(a);
+            int bIndex = mutatedDna.indexOf(b);
+            mutatedDna.set(aIndex, b);
+            mutatedDna.set(bIndex, a);
+        }
 
         for (int i = 0; i < mutatedDna.size(); i++) {
             mutatedDna.set(i, GenomeRule.mutate(mutatedDna.get(i)));
@@ -113,6 +113,20 @@ public class Genome {
         return builder.toString();
     }
 
+    public String formatShortDna() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+        for (int i = 0; i < this.dna.size(); i++) {
+            GenomeRule gene = this.dna.get(i);
+            builder.append(gene.toShortString());
+            if (i < this.dna.size() - 1) {
+                builder.append("-");
+            }
+        }
+        builder.append(")");
+        return builder.toString();
+    }
+
     public static Agent asAgent(Genome X, int playerIndex) {
         ArrayList<IRule> rules = new ArrayList<IRule>();
         for (GenomeRule gene : X.dna) {
@@ -133,7 +147,16 @@ public class Genome {
         };
     }
 
-    public static Genome spawn() {
+    public static Genome spawnRandom() {
+        ArrayList<GenomeRule> dna = new ArrayList<GenomeRule>();
+        int length = 5 + RandomUtils.integer(1, 4);
+        for (int i = 1; i <= length; i++) {
+            dna.add(GenomeRule.spawnRandom());
+        }
+        return new Genome(dna);
+    }
+
+    public static Genome spawnModel() {
         ArrayList<GenomeRule> dna = new ArrayList<GenomeRule>();
         ArrayList<Float> playSemiSafeWeights = new ArrayList<Float>(
             Arrays.asList(
