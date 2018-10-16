@@ -1,6 +1,9 @@
 package hanabAI;
 
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -107,15 +110,17 @@ public class Hanabi{
     // log.append(critique(result));
     // System.out.print(log);
     try {
-      PrintWriter log = new PrintWriter("evolution-log.txt", "UTF-8");
+      FileOutputStream fos = new FileOutputStream("evolution-log.txt");
+      Writer log = new OutputStreamWriter(fos, "UTF8");
       EvolutionRunner.run(
         log,
-        5,
-        100,
+        8,
+        50,
+        500,
         (float)0.01,
         500,
         4,
-        5
+        10
       );
     } catch (Exception ex) {
       System.out.print(ex);

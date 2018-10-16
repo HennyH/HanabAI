@@ -2,6 +2,7 @@ package agents.piers.evolution;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.UUID;
 
 import agents.piers.FallbackRule;
 import agents.piers.IRule;
@@ -14,9 +15,11 @@ import hanabAI.State;
 public class Genome {
 
     private ArrayList<GenomeRule> dna;
+    private String name;
 
     private Genome(ArrayList<GenomeRule> dna) {
         this.dna = dna;
+        this.name = UUID.randomUUID().toString();
     }
 
     public static Genome crossover(Genome X, float xFitness, Genome Y, float yFitness) {
@@ -92,18 +95,21 @@ public class Genome {
         return new Genome(mutatedDna);
     }
 
+    public String getName() { return this.name; }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("[");
+        builder.append(this.name);
+        builder.append("(");
         for (int i = 0; i < this.dna.size(); i++) {
             GenomeRule gene = this.dna.get(i);
             builder.append(gene.toString());
             if (i < this.dna.size() - 1) {
-                builder.append("-");
+                builder.append("...");
             }
         }
-        builder.append("]");
+        builder.append(")");
         return builder.toString();
     }
 

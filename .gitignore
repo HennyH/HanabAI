@@ -8,3 +8,4 @@ build.sh
 #ignore the doc
 doc/*
 logs/*
+**/tex2pdf*

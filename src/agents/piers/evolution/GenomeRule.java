@@ -209,13 +209,11 @@ public class GenomeRule {
             builder.append(")");
         } else if (this.ruleType == GenomeRuleType.TellAnyonePlayable
                 || this.ruleType == GenomeRuleType.TellAnyoneUseless
+                || this.ruleType == GenomeRuleType.TellAnyoneUseful
         ) {
             builder.append("(");
-            builder.append(Arrays.toString(this.hintWeightingParamters.toArray()));
-            builder.append(")");
-        } else if (this.ruleType == GenomeRuleType.TellAnyoneUseful) {
-            builder.append("(");
-            builder.append(Arrays.toString(this.hintWeightingParamters.toArray()));
+            String weightArrayStr = Arrays.toString(this.hintWeightingParamters.toArray());
+            builder.append(weightArrayStr.substring(1, weightArrayStr.length() - 1));
             builder.append(")");
         }
         return builder.toString();

@@ -74,6 +74,31 @@ public class Linq {
         return new Maybe<T>(maxObj);
     }
 
+    public static <T extends Comparable<T>> Maybe<T> max(ArrayList<T> source) {
+        return Linq.max(source, new Identity<T>());
+    }
+
+    public static <T, R extends Comparable<R>> Maybe<T> min(ArrayList<T> source, Func<T, R> selector) {
+        T minObj = null;
+        R minObjProjection = null;
+        for (T obj : source) {
+            R projection = selector.apply(obj);
+            if (minObj == null) {
+                minObj = obj;
+                minObjProjection = projection;
+            } else if (projection.compareTo(minObjProjection) <= -1) {
+                minObj = obj;
+                minObjProjection = projection;
+            }
+        }
+
+        return new Maybe<T>(minObj);
+    }
+
+    public static <T extends Comparable<T>> Maybe<T> min(ArrayList<T> source) {
+        return Linq.min(source, new Identity<T>());
+    }
+
     public static <T> Maybe<T> first(ArrayList<T> source) {
         return source.size() > 0 ? new Maybe<T>(source.get(0)) : new Maybe<T>(null);
     }
@@ -109,6 +134,10 @@ public class Linq {
             : new Maybe<Float>(null);
     }
 
+    public static Maybe<Float> avg(ArrayList<Integer> source) {
+        return Linq.avg(source, new Identity<Integer>());
+    }
+
     public static <T> Maybe<Float> avgF(ArrayList<T> source, Func<T, Float> selector) {
         Float total = (float)0.0;
         for (T obj : source) {
@@ -117,6 +146,10 @@ public class Linq {
         return source.size() > 0
             ? new Maybe<Float>((float)total / (float)source.size())
             : new Maybe<Float>(null);
+    }
+
+    public static Maybe<Float> avgF(ArrayList<Float> source) {
+        return Linq.avgF(source, new Identity<Float>());
     }
 
     public static <T> ArrayList<T> removeInstanceWise(ArrayList<T> source, ArrayList<T> other) {

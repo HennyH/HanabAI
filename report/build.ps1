@@ -1,0 +1,1 @@
+pandoc .\report.md --pdf-engine=xelatex --filter pandoc-citeproc --bibliography=report.bib -o report.pdf

@@ -1,12 +1,20 @@
 package agents.piers.evolution;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import agents.piers.Identity;
 import agents.piers.Linq;
@@ -18,76 +26,90 @@ import hanabAI.Hanabi;
 public class EvolutionRunner {
 
     public static void logDetailedGenerationSummary(
-            PrintWriter log,
+            Writer log,
             int generation,
-            Float topScore,
-            HashMap<Float, ArrayList<Genome>> scoreToGenomes,
-            ArrayList<Genome> newChildren,
-            ArrayList<Genome> population,
-            ArrayList<Float> populationAverageScores
+            ArrayList<Genome> generationPopulation,
+            ArrayList<Float> generationIndividualScores,
+            ArrayList<Float> generationAverageScores,
+            Float originalPopulationAverageScoreMean,
+            Float originalPopulationAverageScoreStdev,
+            HashMap<Float, ArrayList<Genome>> averageScoreToGenomes,
+            ArrayList<Genome> children
     ) {
         StringBuilder builder = new StringBuilder();
         builder.append(
-            String.format(
-                "Generation %-7d: %-7s %-10s %-8s %-8s",
+            EvolutionRunner.formatGenerationStatistics(
                 generation,
-                String.format("n(%d)", population.size()),
-                String.format("max(%5.2f)", topScore),
-                String.format("μ(%5.2f)", Linq.avgF(populationAverageScores, new Identity<Float>()).getValue()),
-                String.format("σ(%5.2f)", MathUtils.stdevP(populationAverageScores))
+                generationPopulation,
+                generationIndividualScores,
+                generationAverageScores,
+                originalPopulationAverageScoreMean,
+                originalPopulationAverageScoreStdev
             )
         );
-        builder.append("-----------------\n");
-        for (Genome genome : scoreToGenomes.get(topScore)) {
-            builder.append("\t " + genome.toString() + "\n");
+        builder.append("\n-----------------\n");
+        float topAverageScore = Linq.max(generationAverageScores).getValue();
+        for (Genome genome : averageScoreToGenomes.get(topAverageScore)) {
+            builder.append("\tW: " + genome.getName() + "\n");
         }
         builder.append("\n\tChildren:\n\t--------\n");
-        for (Genome genome : newChildren) {
-            builder.append("\t>" + genome.toString() + "\n");
+        for (Genome genome : children) {
+            builder.append("\tC: " + genome.toString() + "\n");
         }
-        log.println(builder.toString());
+        try {
+            log.write(builder.toString());
+            log.flush();
+        } catch (IOException ex) {
+            System.err.println(ex);
+        }
     }
 
-    public static void printShortGenerationSummary(
-            PrintWriter log,
+    public static String formatGenerationStatistics(
             int generation,
-            Float topScore,
-            HashMap<Float, ArrayList<Genome>> scoreToGenomes,
             ArrayList<Genome> generationPopulation,
+            ArrayList<Float> generationIndividualScores,
             ArrayList<Float> generationAverageScores,
-            Float originalPopulationAverageScoresMean,
-            Float originalPopulationAverageScoresStdev
+            Float originalPopulationAverageScoreMean,
+            Float originalPopulationAverageScoreStdev
     ) {
-        float generationScoresAverage = Linq.avgF(generationAverageScores, new Identity<Float>()).getValue();
-        float generationScoresStdev = MathUtils.stdevP(generationAverageScores);
-        System.out.println(
-            String.format(
-                "Generation %-7d: %-7s %-10s %-8s %-8s %-10s %-10s",
-                generation,
-                String.format("n(%d)", generationPopulation.size()),
-                String.format("max(%5.2f)", topScore),
-                String.format("μ(%5.2f)", generationScoresAverage),
-                String.format("σ(%5.2f)", generationScoresStdev),
-                String.format("▵μ(%6.2f)", generationScoresAverage - originalPopulationAverageScoresMean),
-                String.format("▵σ(%6.2f)", generationScoresStdev - originalPopulationAverageScoresStdev)
-            )
+        float averageGenerationScoreAverage = Linq.avgF(generationAverageScores).getValue();
+        float averageGenerationScoreStdev = MathUtils.stdevP(generationAverageScores);
+        return String.format(
+            "Generation %-7d: %-7s %-12s %-12s %-10s %-10s %-12s %-12s %-10s %-10s %-12s %-12s",
+            generation,
+            String.format("n(%d)", generationPopulation.size()),
+            /* Statistics around individual game scores across population */
+            String.format("min_s(%5.2f)", Linq.min(generationIndividualScores).getValue()),
+            String.format("max_s(%5.2f)", Linq.max(generationIndividualScores).getValue()),
+            String.format("U_s(%5.2f)", Linq.avgF(generationIndividualScores).getValue()),
+            String.format("S_s(%5.2f)", MathUtils.stdevP(generationIndividualScores)),
+            /* Statistics around average game scores across population */
+            String.format("min_u(%5.2f)", Linq.min(generationAverageScores).getValue()),
+            String.format("max_u(%5.2f)", Linq.max(generationAverageScores).getValue()),
+            String.format("U_u(%5.2f)", averageGenerationScoreAverage),
+            String.format("S_u(%5.2f)", averageGenerationScoreStdev),
+            /* Difference to original population */
+            String.format("DU_u(%6.2f)", averageGenerationScoreAverage - originalPopulationAverageScoreMean),
+            String.format("DS_u(%6.2f)", averageGenerationScoreStdev - originalPopulationAverageScoreStdev)
         );
     }
 
 
 
     public static ArrayList<Genome> run(
-                PrintWriter log,
+                Writer log,
+                int threadCount,
                 int initialPopulationSize,
                 int maximumPopulationSize,
                 float extinctionRate,
                 int generations,
                 int numberOfPlayers,
-                int roundSamples
+                int numberOfSamplesInRound
     ) {
         ArrayList<Genome> population = new ArrayList<Genome>();
         Float originalPopulationAverageScoresMean = null;
         Float originalPopulationAverageScoresStdev = null;
+        ExecutorService pool = Executors.newFixedThreadPool(threadCount);
 
         for (int generation = 1; generation <= generations; generation++) {
 
@@ -97,26 +119,52 @@ public class EvolutionRunner {
             }
 
             /* Evaluate: Measure each agents performance and keep a record. */
-            HashMap<Float, ArrayList<Genome>> scoreToGenomes = new HashMap<>();
-            HashMap<Genome, Float> genomeToScore = new HashMap<>();
+            HashMap<Float, ArrayList<Genome>> averageScoreToGenomes = new HashMap<>();
+            HashMap<Genome, Float> genomeToAverageScore = new HashMap<>();
             ArrayList<Float> populationAverageScores = new ArrayList<Float>();
+            ArrayList<Float> populationIndividualScores = new ArrayList<Float>();
+
+            /* Create all the simulation tasks */
+            ArrayList<Callable<SimulationCallable.Result>> simulations = new ArrayList<>();
             for (Genome genome : population) {
-                int totalScore = 0;
-                for (int round = 1; round <= roundSamples; round++) {
-                    Agent[] agents = new Agent[numberOfPlayers];
-                    for (int playerIndex = 0; playerIndex < numberOfPlayers; playerIndex++) {
-                        agents[playerIndex] = Genome.asAgent(genome, playerIndex);
+                simulations.add(
+                    new SimulationCallable(
+                        genome,
+                        numberOfPlayers,
+                        numberOfSamplesInRound
+                    )
+                );
+            }
+
+            /* Wait for all the simulation tasks to finish */
+            List<Future<SimulationCallable.Result>> futures = new ArrayList<>();
+            try {
+                futures = pool.invokeAll(simulations);
+            } catch (InterruptedException ex) {
+                System.err.print(ex);
+                break;
+            }
+
+            /* Process the results of the simulations */
+            for (Future<SimulationCallable.Result> future : futures) {
+                try {
+                    SimulationCallable.Result result = future.get();
+                    for (Integer score : result.scores) {
+                        populationIndividualScores.add((float)score);
                     }
-                    Hanabi game = new Hanabi(agents);
-                    totalScore += game.play();
+                    float averageScore = Linq.avg(result.scores).getValue();
+                    populationAverageScores.add(averageScore);
+                    /* Preserve a mapping so we can go from scores to genomes
+                     * and back from genomes to scores.
+                     */
+                    genomeToAverageScore.put(result.genome, averageScore);
+                    if (!averageScoreToGenomes.containsKey(averageScore)) {
+                        averageScoreToGenomes.put(averageScore, new ArrayList<Genome>());
+                    }
+                    averageScoreToGenomes.get(averageScore).add(result.genome);
+                } catch (InterruptedException | ExecutionException ex) {
+                    System.err.print(ex);
                 }
-                float averageScore = (float)((double)totalScore / (double)roundSamples);
-                populationAverageScores.add(averageScore);
-                genomeToScore.put(genome, averageScore);
-                if (!scoreToGenomes.containsKey(averageScore)) {
-                    scoreToGenomes.put(averageScore, new ArrayList<Genome>());
-                }
-                scoreToGenomes.get(averageScore).add(genome);
             }
 
             /* Selection: Let the environment kill some percentage of the worst
@@ -125,10 +173,10 @@ public class EvolutionRunner {
             int currentPopulationSize = population.size();
             int numberOfGenomesToKeep = currentPopulationSize - (int)(currentPopulationSize * extinctionRate);
             ArrayList<Genome> orderedSurvivingGenomes = new ArrayList<>();
-            Float[] scores = scoreToGenomes.keySet().toArray(new Float[0]);
-            Arrays.sort(scores, Collections.reverseOrder());
-            for (Float score : scores) {
-                for (Genome genome : scoreToGenomes.get(score)) {
+            Float[] averageScores = averageScoreToGenomes.keySet().toArray(new Float[0]);
+            Arrays.sort(averageScores, Collections.reverseOrder());
+            for (Float averageScore : averageScores) {
+                for (Genome genome : averageScoreToGenomes.get(averageScore)) {
                     if (orderedSurvivingGenomes.size() == numberOfGenomesToKeep) {
                         break;
                     }
@@ -170,9 +218,9 @@ public class EvolutionRunner {
                             Genome.mutate(
                                 Genome.crossover(
                                     alphaGenome,
-                                    genomeToScore.get(alphaGenome),
+                                    genomeToAverageScore.get(alphaGenome),
                                     betaGenome,
-                                    genomeToScore.get(betaGenome)
+                                    genomeToAverageScore.get(betaGenome)
                                 )
                             )
                         );
@@ -187,9 +235,9 @@ public class EvolutionRunner {
                     Genome.mutate(
                         Genome.crossover(
                             X,
-                            genomeToScore.get(X),
+                            genomeToAverageScore.get(X),
                             Y,
-                            genomeToScore.get(Y)
+                            genomeToAverageScore.get(Y)
                         )
                     )
                 );
@@ -207,18 +255,27 @@ public class EvolutionRunner {
                 originalPopulationAverageScoresStdev = MathUtils.stdevP(populationAverageScores);
             }
 
-            logDetailedGenerationSummary(log, generation, scores[0], scoreToGenomes, newChildren, population, populationAverageScores);
-            printShortGenerationSummary(
+            logDetailedGenerationSummary(
                 log,
                 generation,
-                scores[0],
-                scoreToGenomes,
                 population,
+                populationIndividualScores,
                 populationAverageScores,
                 originalPopulationAverageScoresMean,
-                originalPopulationAverageScoresStdev
+                originalPopulationAverageScoresStdev,
+                averageScoreToGenomes,
+                newChildren
             );
-            log.flush();
+            System.out.println(
+                formatGenerationStatistics(
+                    generation,
+                    population,
+                    populationIndividualScores,
+                    populationAverageScores,
+                    originalPopulationAverageScoresMean,
+                    originalPopulationAverageScoresStdev
+                )
+            );
 
             /* The surviving genomes and their children become the new population */
             population = orderedSurvivingGenomes;
