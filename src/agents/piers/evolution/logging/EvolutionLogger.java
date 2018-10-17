@@ -36,7 +36,7 @@ public class EvolutionLogger {
                 pScoresStdev - initialPopulationAverageScoreStdev
             ),
             Linq.map(
-                genomeToScores,
+                genomeToScores.keySet(),
                 new Func<Genome, FitnessYAML>() {
                     @Override
                     public FitnessYAML apply(Genome genome) {

@@ -24,9 +24,9 @@ public class SimulationCallable implements Callable<SimulationCallable.Result> {
 
     public class Result {
         public final Genome genome;
-        public final ArrayList<Integer> scores;
+        public final ArrayList<Float> scores;
 
-        protected Result(Genome genome, ArrayList<Integer> scores) {
+        protected Result(Genome genome, ArrayList<Float> scores) {
             this.genome = genome;
             this.scores = scores;
         }
@@ -35,14 +35,14 @@ public class SimulationCallable implements Callable<SimulationCallable.Result> {
 
     @Override
     public Result call() throws Exception {
-        ArrayList<Integer> scores = new ArrayList<>();
+        ArrayList<Float> scores = new ArrayList<>();
         for (int round = 1; round <= this._numberOfRounds; round++) {
             Agent[] agents = new Agent[this._numberOfPlayers];
             for (int playerIndex = 0; playerIndex < this._numberOfPlayers; playerIndex++) {
                 agents[playerIndex] = Genome.asAgent(this._genome, playerIndex);
             }
             Hanabi game = new Hanabi(agents);
-            scores.add(game.play());
+            scores.add((float)game.play());
         }
 
         return new Result(this._genome, scores);

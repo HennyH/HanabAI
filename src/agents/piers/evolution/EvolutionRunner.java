@@ -19,13 +19,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import agents.piers.Identity;
@@ -55,15 +58,14 @@ public class EvolutionRunner {
             .get(logDirectory, String.format("generation-%d.txt", generation))
             .toAbsolutePath()
             .toFile();
-        if (!logFile.exists()) {
-            logFile.mkdirs();
+        File logFileDirectory = Paths.get(logDirectory).toAbsolutePath().toFile();
+        if (!logFileDirectory.exists()) {
+            logFileDirectory.mkdirs();
         }
         try {
             FileOutputStream logFileOutputStream = new FileOutputStream(logFile, false);
             OutputStreamWriter logFileStreamWriter = new OutputStreamWriter(logFileOutputStream, "UTF-8");
             BufferedWriter logFileBufferedWriter = new BufferedWriter(logFileStreamWriter);
-            PrintWriter logFileWriter = new PrintWriter(logFileBufferedWriter);
-
             GenerationSummaryYAML summary = EvolutionLogger.createSummaryYAML(
                 generation,
                 initialPopulationsScores,
@@ -72,11 +74,15 @@ public class EvolutionRunner {
                 orderedGenomes,
                 children
             );
-            Yaml yaml  = new Yaml();
+            DumperOptions options = new DumperOptions();
+            options.setIndent(4);
+            Yaml yaml  = new Yaml(options);
+            yaml.dump(summary, logFileBufferedWriter);
+            logFileBufferedWriter.flush();
+            logFileBufferedWriter.close();
         } catch (Exception ex) {
             System.err.println(ex);
         }
-
     }
 
     public static String formatGenerationStatistics(
@@ -109,12 +115,13 @@ public class EvolutionRunner {
             /* Difference to original population */
             String.format("DU_u(%6.2f)", averageGenerationScoreAverage - originalPopulationAverageScoreMean),
             String.format("DS_u(%6.2f)", averageGenerationScoreStdev - originalPopulationAverageScoreStdev),
-            Linq.first(averageScoreToGenomes.get(maximumAverageScore)).getValue().formatShortDna(),
-            Linq.first(averageScoreToGenomes.get(minimumAverageScore)).getValue().formatShortDna()
+            Linq.first(averageScoreToGenomes.get(maximumAverageScore)).getValue().formatDna(),
+            Linq.first(averageScoreToGenomes.get(minimumAverageScore)).getValue().formatDna()
         );
     }
 
     public static ArrayList<Genome> run(
+                String logDirectory,
                 ArrayList<String> seedDnas,
                 int threadCount,
                 int initialPopulationSize,
@@ -126,26 +133,23 @@ public class EvolutionRunner {
                 int numberOfSamplesInRound
     ) {
         ArrayList<Genome> population = new ArrayList<Genome>();
-        Float originalPopulationAverageScoresMean = null;
-        Float originalPopulationAverageScoresStdev = null;
+        ArrayList<Float> initialPopulationScores = new ArrayList<>();
         ExecutorService pool = Executors.newFixedThreadPool(threadCount);
 
         for (int generation = 1; generation <= generations; generation++) {
 
             /* Never let the population drop below the inital amount */
             while (population.size() < initialPopulationSize) {
-                if (RandomUtils.chance(spawnModelChance)) {
-                    population.add(Genome.parseDna(modelDna));
+                if (RandomUtils.chance(spawnSeedChance)) {
+                    population.add(Genome.parseDna(RandomUtils.choose(seedDnas)));
                 } else {
                     population.add(Genome.spawnRandom());
                 }
             }
 
             /* Evaluate: Measure each agents performance and keep a record. */
-            HashMap<Float, ArrayList<Genome>> averageScoreToGenomes = new HashMap<>();
-            HashMap<Genome, Float> genomeToAverageScore = new HashMap<>();
-            ArrayList<Float> populationAverageScores = new ArrayList<Float>();
-            ArrayList<Float> populationIndividualScores = new ArrayList<Float>();
+            HashMap<Genome, ArrayList<Float>> genomeToScores = new HashMap<>();
+            ArrayList<Float> populationScores = new ArrayList<>();
 
             /* Create all the simulation tasks */
             ArrayList<Callable<SimulationCallable.Result>> simulations = new ArrayList<>();
@@ -172,21 +176,10 @@ public class EvolutionRunner {
             for (Future<SimulationCallable.Result> future : futures) {
                 try {
                     SimulationCallable.Result result = future.get();
-                    for (Integer score : result.scores) {
-                        populationIndividualScores.add((float)score);
+                    for (Float score : result.scores) {
+                        populationScores.add(score);
                     }
-                    float averageScore =
-                        Linq.min(result.scores).getValue()
-                        + ((float)0.2 * Linq.avg(result.scores).getValue());
-                    populationAverageScores.add(averageScore);
-                    /* Preserve a mapping so we can go from scores to genomes
-                     * and back from genomes to scores.
-                     */
-                    genomeToAverageScore.put(result.genome, averageScore);
-                    if (!averageScoreToGenomes.containsKey(averageScore)) {
-                        averageScoreToGenomes.put(averageScore, new ArrayList<Genome>());
-                    }
-                    averageScoreToGenomes.get(averageScore).add(result.genome);
+                    genomeToScores.put(result.genome, result.scores);
                 } catch (InterruptedException | ExecutionException ex) {
                     System.err.print(ex);
                 }
@@ -198,9 +191,24 @@ public class EvolutionRunner {
             int currentPopulationSize = population.size();
             int numberOfGenomesToKeep = currentPopulationSize - (int)(currentPopulationSize * extinctionRate);
             ArrayList<Genome> orderedSurvivingGenomes = new ArrayList<>();
-            Float[] averageScores = averageScoreToGenomes.keySet().toArray(new Float[0]);
-            Arrays.sort(averageScores, Collections.reverseOrder());
-            for (Float averageScore : averageScores) {
+            HashMap<Float, ArrayList<Genome>> averageScoreToGenomes = new HashMap<>();
+            HashMap<Genome, Float> genomeToAverageScore = new HashMap<>();
+            for (Map.Entry<Genome, ArrayList<Float>> entry : genomeToScores.entrySet()) {
+                Genome genome = entry.getKey();
+                Float averageScore = Linq.avgF(entry.getValue()).getValue();
+                if (!averageScoreToGenomes.containsKey(averageScore)) {
+                    averageScoreToGenomes.put(averageScore, new ArrayList<Genome>());
+                }
+                averageScoreToGenomes.get(averageScore).add(genome);
+                genomeToAverageScore.put(genome, averageScore);
+            }
+            /* Get all the average scores out and sort them */
+            Float[] sortedScores = averageScoreToGenomes.keySet().toArray(new Float[0]);
+            Arrays.sort(sortedScores, Collections.reverseOrder());
+            /* Now that he have the scores in order, and a mapping from scores to
+             * genomes we can go over them in order.
+             */
+            for (Float averageScore : sortedScores) {
                 for (Genome genome : averageScoreToGenomes.get(averageScore)) {
                     if (orderedSurvivingGenomes.size() == numberOfGenomesToKeep) {
                         break;
@@ -267,41 +275,28 @@ public class EvolutionRunner {
                     )
                 );
             }
+
+            /* Reporting: Display progress information */
+            if (generation == 1) {
+                @SuppressWarnings("unchecked")
+                ArrayList<Float> copyOfScores = (ArrayList<Float>)populationScores.clone();
+                initialPopulationScores = copyOfScores;
+            }
+
+            dumpGenerationLog(
+                logDirectory,
+                generation,
+                initialPopulationScores,
+                population,
+                genomeToScores,
+                orderedSurvivingGenomes,
+                newChildren
+            );
+
             /* Add the children into the surving pool */
             for (Genome child : newChildren) {
                 orderedSurvivingGenomes.add(child);
             }
-
-            /* Reporting: Display progress information */
-            if (originalPopulationAverageScoresMean == null
-                    && originalPopulationAverageScoresStdev == null
-            ) {
-                originalPopulationAverageScoresMean = Linq.avgF(populationAverageScores, new Identity<Float>()).getValue();
-                originalPopulationAverageScoresStdev = MathUtils.stdevP(populationAverageScores);
-            }
-
-            logDetailedGenerationSummary(
-                log,
-                generation,
-                population,
-                populationIndividualScores,
-                populationAverageScores,
-                originalPopulationAverageScoresMean,
-                originalPopulationAverageScoresStdev,
-                averageScoreToGenomes,
-                newChildren
-            );
-            System.out.println(
-                formatGenerationStatistics(
-                    generation,
-                    population,
-                    populationIndividualScores,
-                    populationAverageScores,
-                    originalPopulationAverageScoresMean,
-                    originalPopulationAverageScoresStdev,
-                    averageScoreToGenomes
-                )
-            );
 
             /* The surviving genomes and their children become the new population */
             population = orderedSurvivingGenomes;
@@ -360,10 +355,14 @@ public class EvolutionRunner {
         }
 
         if (!parameters.containsKey("logDir")) {
-            throw new InvalidParameterException("Must provide a logDir::urlenc parameter.");
+            parameters.put(
+                "logDir",
+                Paths.get("evolution-logs", UUID.randomUUID().toString()).toString()
+            );
         }
 
         EvolutionRunner.run(
+            (String)parameters.get("logDir"),
             new ArrayList<String>(Arrays.asList(((String)parameters.get("seedDnas")).split("::"))),
             (int)parameters.get("threadCount"),
             (int)parameters.get("initialPopulationSize"),
