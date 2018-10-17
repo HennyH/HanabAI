@@ -26,6 +26,7 @@ C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\State
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\TellAnyoneAboutPlayableCardRule.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\TellAnyoneAboutUsefulCardRule.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\TellAnyoneAboutUselessCardRule.java
+C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\benchmarking\BenchmarkRunner.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\EvolutionRunner.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\Genome.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\GenomeHintWeightingParameters.java

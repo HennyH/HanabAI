@@ -85,12 +85,18 @@ public class IfRule implements IRule {
         );
     }
 
-    public static IfRule atLeastXHintsAndYLivesLeft(int hints, int lives, IRule consequence) {
+    public static IfRule hintsAndLivesWithinRange(
+            Pair<Integer, Integer> livesRemainingRange,
+            Pair<Integer, Integer> hintsRemainingRange,
+            IRule consequence
+    ) {
         return new IfRule(
             new Func<State, Boolean>() {
                 @Override
                 public Boolean apply(State s) {
-                    return s.getFuseTokens() >= lives && s.getHintTokens() >= hints;
+                    return
+                        (s.getFuseTokens() >= livesRemainingRange.getLeft() && s.getFuseTokens() <= livesRemainingRange.getRight()) &&
+                        (s.getHintTokens() >= hintsRemainingRange.getLeft() && s.getHintTokens() <= hintsRemainingRange.getRight());
                 }
             },
             consequence

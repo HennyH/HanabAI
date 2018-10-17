@@ -22,4 +22,17 @@ public enum GenomeRuleType {
         }
         return "?";
     }
+
+    public static  GenomeRuleType fromString(String name) {
+        switch (name)  {
+            case "PS": return PlaySafe;
+            case "PPS": return PlayProbablySafe;
+            case "TAP": return TellAnyonePlayable;
+            case "TAU": return TellAnyoneUseful;
+            case "TAD": return TellAnyoneUseless;
+            case "OD": return OsawaDiscard;
+            case "RD": return RandomDiscard;
+        }
+        return null;
+    }
 }

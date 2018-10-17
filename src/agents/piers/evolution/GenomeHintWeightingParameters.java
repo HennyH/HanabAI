@@ -67,4 +67,22 @@ public class GenomeHintWeightingParameters {
         }
         return weights;
     }
+
+    public ArrayList<Float> asArray() {
+        return new ArrayList<Float>(
+            Arrays.asList(
+                new Float[]
+                {
+                    this.utilityThreshold,
+                    this.weightingForPointingAtMoreCards,
+                    this.weightingForValueOverColour,
+                    this.weightingForColourOverValue,
+                    this.weightingForHigherValues,
+                    this.weightingForRevealingPlayableCard,
+                    this.weightingForRevealingAUselessCard,
+                    this.weightingForPointingAtLessDistantFuturePlayableCards
+                }
+            )
+        );
+    }
 }

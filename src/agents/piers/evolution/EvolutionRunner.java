@@ -104,6 +104,7 @@ public class EvolutionRunner {
 
     public static ArrayList<Genome> run(
                 Writer log,
+                String modelDna,
                 int threadCount,
                 int initialPopulationSize,
                 int maximumPopulationSize,
@@ -123,7 +124,7 @@ public class EvolutionRunner {
             /* Never let the population drop below the inital amount */
             while (population.size() < initialPopulationSize) {
                 if (RandomUtils.chance(spawnModelChance)) {
-                    population.add(Genome.spawnModel());
+                    population.add(Genome.parseDna(modelDna));
                 } else {
                     population.add(Genome.spawnRandom());
                 }
@@ -163,7 +164,9 @@ public class EvolutionRunner {
                     for (Integer score : result.scores) {
                         populationIndividualScores.add((float)score);
                     }
-                    float averageScore = Linq.avg(result.scores).getValue();
+                    float averageScore =
+                        Linq.min(result.scores).getValue()
+                        + ((float)0.2 * Linq.avg(result.scores).getValue());
                     populationAverageScores.add(averageScore);
                     /* Preserve a mapping so we can go from scores to genomes
                      * and back from genomes to scores.
