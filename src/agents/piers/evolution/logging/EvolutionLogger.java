@@ -58,13 +58,31 @@ public class EvolutionLogger {
             ).toArray(new FitnessYAML[0]),
             Linq.map(
                 population,
-                new Func<Genome, String>() {
+                new Func<Genome, GenomeYAML>() {
                     @Override
-                    public String apply(Genome genome) {
-                        return genome.getName();
+                    public GenomeYAML apply(Genome genome) {
+                        String[] parentNames = genome.getParents().hasValue()
+                            ? Linq.map(
+                                Arrays.asList(genome.getParents().getValue()),
+                                new Func<Genome, String>() {
+                                    @Override
+                                    public String apply(Genome genome) {
+                                        return genome.getName();
+                                    }
+                                }
+                            ).toArray(new String[0])
+                            : new String[0];
+                        return new GenomeYAML(
+                            genome.getName(),
+                            parentNames,
+                            genome.getGenomeThisIsAMutationOf().hasValue()
+                                ? genome.getGenomeThisIsAMutationOf().getValue().getName()
+                                : null,
+                            genome.formatDna()
+                        );
                     }
                 }
-            ).toArray(new String[0]),
+            ).toArray(new GenomeYAML[0]),
             Linq.map(
                 children,
                 new Func<Genome, GenomeYAML>() {

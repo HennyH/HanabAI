@@ -203,26 +203,18 @@ public class GenomeRule {
         );
     }
 
-    public static String formatGenomeRule(GenomeRule rule, boolean shortVersion) {
+    public static String formatGenomeRule(GenomeRule rule) {
         StringBuilder builder = new StringBuilder();
-        GenomeHintWeightingParameters weights = GenomeHintWeightingParameters.asParameterSet(
-            rule.hintWeightingParamters
-        );
         String weightArrayStr = Arrays.toString(rule.hintWeightingParamters.toArray());
         builder.append(
             String.format(
-                shortVersion
-                    ? "{R=%s;L=%d-%d;H=%d-%d;W=%s}"
-                    : "{R=%s;L=%d-%d;H=%d-%d;W=%s}",
+                "{R=%s;L=%d-%d;H=%d-%d;W=%s}",
                 rule.ruleType.toString(),
                 rule.livesRemainingRange.getLeft(),
                 rule.livesRemainingRange.getRight(),
                 rule.hintsRemainingRange.getLeft(),
                 rule.hintsRemainingRange.getRight(),
-                weights.utilityThreshold,
-                shortVersion
-                    ? String.format("%f", Linq.avgF(rule.hintWeightingParamters).getValue())
-                    : weightArrayStr.substring(1, weightArrayStr.length() - 1)
+                weightArrayStr.substring(1, weightArrayStr.length() - 1)
             )
         );
         return builder.toString();
@@ -262,10 +254,6 @@ public class GenomeRule {
 
     @Override
     public String toString() {
-        return GenomeRule.formatGenomeRule(this, false);
-    }
-
-    public String toShortString() {
-        return GenomeRule.formatGenomeRule(this, true);
+        return GenomeRule.formatGenomeRule(this);
     }
 }

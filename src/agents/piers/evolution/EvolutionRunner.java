@@ -76,6 +76,7 @@ public class EvolutionRunner {
             );
             DumperOptions options = new DumperOptions();
             options.setIndent(4);
+            options.setPrettyFlow(true);
             Yaml yaml  = new Yaml(options);
             yaml.dump(summary, logFileBufferedWriter);
             logFileBufferedWriter.flush();
@@ -87,26 +88,28 @@ public class EvolutionRunner {
 
     public static String formatGenerationStatistics(
             int generation,
-            ArrayList<Genome> generationPopulation,
-            ArrayList<Float> generationIndividualScores,
-            ArrayList<Float> generationAverageScores,
-            Float originalPopulationAverageScoreMean,
-            Float originalPopulationAverageScoreStdev,
+            ArrayList<Genome> population,
+            ArrayList<Float> populationScores,
+            ArrayList<Float> populationAverageScores,
+            ArrayList<Float> initialPopulationsScores,
+            ArrayList<Float> initialPopulationsAverageScores,
             HashMap<Float, ArrayList<Genome>> averageScoreToGenomes
     ) {
-        float averageGenerationScoreAverage = Linq.avgF(generationAverageScores).getValue();
-        float averageGenerationScoreStdev = MathUtils.stdevP(generationAverageScores);
-        float maximumAverageScore = Linq.max(generationAverageScores).getValue();
-        float minimumAverageScore = Linq.min(generationAverageScores).getValue();
+        float originalPopulationAverageScoreMean = Linq.avgF(initialPopulationsAverageScores).getValue();
+        float originalPopulationAverageScoreStdev = MathUtils.stdevP(initialPopulationsAverageScores);
+        float averageGenerationScoreAverage = Linq.avgF(populationAverageScores).getValue();
+        float averageGenerationScoreStdev = MathUtils.stdevP(populationAverageScores);
+        float maximumAverageScore = Linq.max(populationAverageScores).getValue();
+        float minimumAverageScore = Linq.min(populationAverageScores).getValue();
         return String.format(
-            "Generation %-7d: %-7s %-12s %-12s %-10s %-10s %-12s %-12s %-10s %-10s %-12s %-12s%n%n\tStrongest: %s%n\tWeakest:   %s%n",
+            "%nGeneration %-7d: %-7s %-12s %-12s %-10s %-10s %-12s %-12s %-10s %-10s %-12s %-12s%n%n\tStrongest: %s%n%n\tWeakest:   %s%n",
             generation,
-            String.format("n(%d)", generationPopulation.size()),
+            String.format("n(%d)", population.size()),
             /* Statistics around individual game scores across population */
-            String.format("min_s(%5.2f)", Linq.min(generationIndividualScores).getValue()),
-            String.format("max_s(%5.2f)", Linq.max(generationIndividualScores).getValue()),
-            String.format("U_s(%5.2f)", Linq.avgF(generationIndividualScores).getValue()),
-            String.format("S_s(%5.2f)", MathUtils.stdevP(generationIndividualScores)),
+            String.format("min_s(%5.2f)", Linq.min(populationScores).getValue()),
+            String.format("max_s(%5.2f)", Linq.max(populationScores).getValue()),
+            String.format("U_s(%5.2f)", Linq.avgF(populationScores).getValue()),
+            String.format("S_s(%5.2f)", MathUtils.stdevP(populationScores)),
             /* Statistics around average game scores across population */
             String.format("min_u(%5.2f)", minimumAverageScore),
             String.format("max_u(%5.2f)", maximumAverageScore),
@@ -134,6 +137,7 @@ public class EvolutionRunner {
     ) {
         ArrayList<Genome> population = new ArrayList<Genome>();
         ArrayList<Float> initialPopulationScores = new ArrayList<>();
+        ArrayList<Float> initialPopulationAverageScores = new ArrayList<>();
         ExecutorService pool = Executors.newFixedThreadPool(threadCount);
 
         for (int generation = 1; generation <= generations; generation++) {
@@ -280,7 +284,10 @@ public class EvolutionRunner {
             if (generation == 1) {
                 @SuppressWarnings("unchecked")
                 ArrayList<Float> copyOfScores = (ArrayList<Float>)populationScores.clone();
+                @SuppressWarnings("unchecked")
+                ArrayList<Float> copyOfAverageScores = new ArrayList<Float>(Arrays.asList(genomeToAverageScore.values().toArray(new Float[0])));
                 initialPopulationScores = copyOfScores;
+                initialPopulationAverageScores = copyOfAverageScores;
             }
 
             dumpGenerationLog(
@@ -291,6 +298,17 @@ public class EvolutionRunner {
                 genomeToScores,
                 orderedSurvivingGenomes,
                 newChildren
+            );
+            System.out.println(
+                formatGenerationStatistics(
+                    generation,
+                    population,
+                    populationScores,
+                    new ArrayList<Float>(Arrays.asList(genomeToAverageScore.values().toArray(new Float[0]))),
+                    initialPopulationScores,
+                    initialPopulationAverageScores,
+                    averageScoreToGenomes
+                )
             );
 
             /* Add the children into the surving pool */
@@ -321,12 +339,12 @@ public class EvolutionRunner {
         parameters.put("seedDnas", defaultSeedDna);
         parameters.put("threadCount", Runtime.getRuntime().availableProcessors());
         parameters.put("initialPopulationSize", 50);
-        parameters.put("maximumPopulationSize", 400);
+        parameters.put("maximumPopulationSize", 1000);
         parameters.put("spawnSeedChance", (float)0.8);
         parameters.put("extinctionRate", (float)0.05);
         parameters.put("generations", 200);
         parameters.put("numberOfPlayers", 4);
-        parameters.put("numberOfSamplesInRound", 20);
+        parameters.put("numberOfSamplesInRound", 50);
 
         if (args.length > 1) {
             for (int i = 1; i < args.length; i++) {
@@ -360,6 +378,8 @@ public class EvolutionRunner {
                 Paths.get("evolution-logs", UUID.randomUUID().toString()).toString()
             );
         }
+
+        System.out.println((String)parameters.get("logDir"));
 
         EvolutionRunner.run(
             (String)parameters.get("logDir"),

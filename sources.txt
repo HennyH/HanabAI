@@ -33,6 +33,11 @@ C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolu
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\GenomeRule.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\GenomeRuleType.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\SimulationCallable.java
+C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\logging\EvolutionLogger.java
+C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\logging\FitnessYAML.java
+C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\logging\GenerationSummaryYAML.java
+C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\logging\GenomeYAML.java
+C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\agents\piers\evolution\logging\PopulationStatisticsYAML.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\hanabAI\Action.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\hanabAI\ActionType.java
 C:\Users\holli\Documents\University\CITS3001\hanabi-agent\src\hanabAI\Agent.java

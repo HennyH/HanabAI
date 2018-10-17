@@ -137,7 +137,6 @@ public class Genome {
 
     public String formatDna() {
         StringBuilder builder = new StringBuilder();
-        builder.append("{");
         for (int i = 0; i < this.dna.size(); i++) {
             GenomeRule gene = this.dna.get(i);
             builder.append(gene.toString());
@@ -145,7 +144,6 @@ public class Genome {
                 builder.append(">");
             }
         }
-        builder.append("}");
         return builder.toString();
     }
 
