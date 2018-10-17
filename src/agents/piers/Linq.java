@@ -1,6 +1,7 @@
 package agents.piers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class Linq {
 
@@ -23,7 +24,7 @@ public class Linq {
         return result;
     }
 
-    public static <T, R> ArrayList<R> map(ArrayList<T> source, Func<T, R> selector) {
+    public static <T, R> ArrayList<R> map(Collection<T> source, Func<T, R> selector) {
         ArrayList<R> result = new ArrayList<R>();
         for (T obj : source) {
             result.add(selector.apply(obj));
@@ -55,6 +56,16 @@ public class Linq {
             }
         }
         return seen;
+    }
+
+    public static <T> ArrayList<T> chain(Collection<ArrayList<T>> sources) {
+        ArrayList<T> result = new ArrayList<>();
+        for (ArrayList<T> source : sources) {
+            for (T obj : source) {
+                result.add(obj);
+            }
+        }
+        return result;
     }
 
     public static <T, R extends Comparable<R>> Maybe<T> max(ArrayList<T> source, Func<T, R> selector) {

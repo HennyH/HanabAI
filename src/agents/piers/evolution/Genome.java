@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import agents.piers.FallbackRule;
 import agents.piers.IRule;
+import agents.piers.Maybe;
 import agents.piers.Pair;
 import agents.piers.RandomUtils;
 import agents.piers.RuleSequenceRule;
@@ -15,12 +16,37 @@ import hanabAI.State;
 
 public class Genome {
 
+    private Maybe<Genome[]> parents;
+    private Maybe<Genome> mutationOfGenome;
     private ArrayList<GenomeRule> dna;
     private String name;
 
     private Genome(ArrayList<GenomeRule> dna) {
+        this.parents = new Maybe<>(null);
+        this.mutationOfGenome = new Maybe<>(null);
         this.dna = dna;
         this.name = UUID.randomUUID().toString();
+    }
+
+    private Genome(Maybe<Genome[]> parents, ArrayList<GenomeRule> dna) {
+        this.parents = parents;
+        this.mutationOfGenome = new Maybe<>(null);
+        this.dna = dna;
+        this.name = UUID.randomUUID().toString();
+    }
+
+    private Genome(Genome[] parents, ArrayList<GenomeRule> dna) {
+        this(new Maybe<>(parents), dna);
+    }
+
+    private Genome(Genome[] parents, Genome mutationOfGenome, ArrayList<GenomeRule> dna) {
+        this(parents, dna);
+        this.mutationOfGenome = new Maybe<>(mutationOfGenome);
+    }
+
+    private Genome(Maybe<Genome[]> parents, Genome mutationOfGenome, ArrayList<GenomeRule> dna) {
+        this(parents, dna);
+        this.mutationOfGenome = new Maybe<>(mutationOfGenome);
     }
 
     public static Genome crossover(Genome X, float xFitness, Genome Y, float yFitness) {
@@ -47,7 +73,7 @@ public class Genome {
          * the genetic material of both parents.
          */
         if (X.dna.size() == Y.dna.size()) {
-            return new Genome(childDna);
+            return new Genome(new Genome[] { X, Y }, childDna);
         }
 
         Genome longerGenome = X.dna.size() > Y.dna.size() ? X : Y;
@@ -64,7 +90,7 @@ public class Genome {
             }
         }
 
-        return new Genome(childDna);
+        return new Genome(new Genome[] { X, Y }, childDna);
     }
 
     public static Genome mutate(Genome X) {
@@ -93,16 +119,25 @@ public class Genome {
             mutatedDna.set(i, GenomeRule.mutate(mutatedDna.get(i)));
         }
 
-        return new Genome(mutatedDna);
+        return new Genome(
+            X.getParents(),
+            X,
+            mutatedDna
+        );
     }
 
     public String getName() { return this.name; }
+    public Maybe<Genome[]> getParents() { return this.parents; }
+    public Maybe<Genome> getGenomeThisIsAMutationOf() { return this.mutationOfGenome; }
 
     @Override
     public String toString() {
+        return this.formatDna();
+    }
+
+    public String formatDna() {
         StringBuilder builder = new StringBuilder();
-        builder.append(this.name);
-        builder.append("::");
+        builder.append("{");
         for (int i = 0; i < this.dna.size(); i++) {
             GenomeRule gene = this.dna.get(i);
             builder.append(gene.toString());
@@ -110,21 +145,7 @@ public class Genome {
                 builder.append(">");
             }
         }
-        builder.append(")");
-        return builder.toString();
-    }
-
-    public String formatShortDna() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("(");
-        for (int i = 0; i < this.dna.size(); i++) {
-            GenomeRule gene = this.dna.get(i);
-            builder.append(gene.toShortString());
-            if (i < this.dna.size() - 1) {
-                builder.append(">");
-            }
-        }
-        builder.append(")");
+        builder.append("}");
         return builder.toString();
     }
 
@@ -164,188 +185,5 @@ public class Genome {
             dna.add(GenomeRule.spawnRandom());
         }
         return new Genome(dna);
-    }
-
-    public static Genome spawnModel() {
-        ArrayList<GenomeRule> dna = new ArrayList<GenomeRule>();
-        ArrayList<Float> playSemiSafeWeights = new ArrayList<Float>(
-            Arrays.asList(
-                new Float[]
-                {
-                    (float)0.7,
-                    (float)0.1,
-                    (float)0.1,
-                    (float)0.1,
-                    (float)-0.3,
-                    (float)0.1,
-                    (float)0.5,
-                    (float)0.8
-                }
-            )
-        );
-        ArrayList<Float> weights = new ArrayList<Float>(
-            Arrays.asList(
-                new Float[]
-                {
-                    (float)0.0,
-                    (float)0.1,
-                    (float)0.1,
-                    (float)0.1,
-                    (float)-0.3,
-                    (float)0.1,
-                    (float)0.5,
-                    (float)0.8
-                }
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.PlaySafe,
-                new Pair<Integer, Integer>(1,3),
-                new Pair<Integer, Integer>(0,8),
-                new GenomeHintWeightingParameters(
-                    (float)0.0047613387,
-                    (float)0.10607247,
-                    (float)0.106292374,
-                    (float)0.10083674,
-                    (float)-0.29725158,
-                    (float)0.1036114,
-                    (float)0.5042223,
-                    (float)0.7958471
-                ).asArray()
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.PlayProbablySafe,
-                new Pair<Integer, Integer>(1,3),
-                new Pair<Integer, Integer>(0,8),
-                new GenomeHintWeightingParameters(
-                    (float)0.67648125,
-                    (float)0.100917436,
-                    (float)0.10119392,
-                    (float)0.10176204,
-                    (float)-0.29964948,
-                    (float)0.09964585,
-                    (float)0.49983552,
-                    (float)0.8013597
-                ).asArray()
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.TellAnyonePlayable,
-                new Pair<Integer, Integer>(1,3),
-                new Pair<Integer, Integer>(0,8),
-                new GenomeHintWeightingParameters(
-                    (float)0.13620576,
-                    (float)0.14117011,
-                    (float)0.19230494,
-                    (float)0.045892805,
-                    (float)-0.13685624,
-                    (float)0.045723233,
-                    (float)0.38740453,
-                    (float)0.6898493
-                ).asArray()
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.PlaySafe,
-                new Pair<Integer, Integer>(1,3),
-                new Pair<Integer, Integer>(0,8),
-                weights
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.TellAnyonePlayable,
-                new Pair<Integer, Integer>(1,3),
-                new Pair<Integer, Integer>(0,8),
-                new GenomeHintWeightingParameters(
-                    (float)0.017988663,
-                    (float)0.12786958,
-                    (float)0.102385625,
-                    (float)0.11974608,
-                    (float)-0.29432404,
-                    (float)0.099960625,
-                    (float)0.502476,
-                    (float)0.7809707
-                ).asArray()
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.TellAnyoneUseful,
-                new Pair<Integer, Integer>(1,3),
-                new Pair<Integer, Integer>(0,8),
-                new GenomeHintWeightingParameters(
-                    (float)0.078329414,
-                    (float)0.15415362,
-                    (float)0.1028495,
-                    (float)0.10937385,
-                    (float)-0.25686795,
-                    (float)0.1600922,
-                    (float)0.38822067,
-                    (float)0.68456745
-                ).asArray()
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.OsawaDiscard,
-                new Pair<Integer, Integer>(0,3),
-                new Pair<Integer, Integer>(0,8),
-                weights
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.TellAnyoneUseless,
-                new Pair<Integer, Integer>(0,3),
-                new Pair<Integer, Integer>(0,8),
-                new GenomeHintWeightingParameters(
-                    (float)0.8158468,
-                    (float)0.057116225,
-                    (float)-0.32946068,
-                    (float)0.7360475,
-                    (float)0.14416188,
-                    (float)0.35551566,
-                    (float)-0.88390964,
-                    (float)0.73350054
-                ).asArray()
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.OsawaDiscard,
-                new Pair<Integer, Integer>(3,3),
-                new Pair<Integer, Integer>(2,8),
-                weights
-            )
-        );
-        dna.add(
-            new GenomeRule(
-                GenomeRuleType.TellAnyoneUseful,
-                new Pair<Integer, Integer>(0,3),
-                new Pair<Integer, Integer>(0,8),
-                new GenomeHintWeightingParameters(
-                    (float)0.8094126,
-                    (float)0.40024704,
-                    (float)-0.06535219,
-                    (float)-0.28192252,
-                    (float)0.059569538,
-                    (float)0.30669165,
-                    (float)0.35209474,
-                    (float)0.26821125
-                ).asArray()
-            )
-        );
-
-        Genome modelGenome = new Genome(dna);
-        for (int i = 1; i <= 30; i++) {
-            modelGenome = Genome.mutate(modelGenome);
-        }
-        return modelGenome;
     }
 }
